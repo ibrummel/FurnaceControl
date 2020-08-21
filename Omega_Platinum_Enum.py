@@ -70,7 +70,7 @@ class readonly():
                                0x08: 'Soak Active', 0x05: 'Ramping, Ramp Active', 0x0a: 'Soaking, Soak Active',
                                0x10: 'Ramp Soak Paused', 0x80: 'Ramp Soak Error'}
 
-def get_output_register(self, output: int, datum: str):
+def get_output_register(output: int, datum: str):
     output_registers_start = {1: 1024, 2: 1056, 3: 1088, 4: 1120,
                               5: 1152, 6: 1184, 7: 1216, 8: 1248}
     output_registers_offset = {"hw_type":  0,
