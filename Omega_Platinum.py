@@ -44,13 +44,13 @@ class OmegaPlatinumControllerModbus(QWidget):
     def read_output_mode(self, output_num: int):
         if 1 <= output_num < 8:
             datum = 'mode'
-            register = ENUM.register_map.get_output_register(output_num, datum)
+            register = ENUM.get_output_register(output_num, datum)
             return ENUM.read.output_mode[self.controller.read_register(register)]
 
     def set_output_mode(self, output_num: int, mode: str):
         if 1 <= output_num <= 8:
             datum = 'mode'
-            register = ENUM.register_map.get_output_register(output_num, datum)
+            register = ENUM.get_output_register(output_num, datum)
             if mode not in ENUM.write.output_mode:
                 raise ValueError("Invalid output mode supplied {}. "
                                  "Valid modes are {}".format(mode, ENUM.write.output_mode.keys()))
@@ -67,7 +67,7 @@ class OmegaPlatinumControllerModbus(QWidget):
                                 ' supplied {}'.format([type(reading1), type(output1), type(reading2), type(output2)]))
 
             for i, datum in enumerate(data):
-                register = ENUM.register_map.get_output_register(output_num, datum)
+                register = ENUM.get_output_register(output_num, datum)
                 self.controller.write_float(register, trims[i])
 
     def get_retransmission_trim(self, output_num: int):
@@ -76,7 +76,7 @@ class OmegaPlatinumControllerModbus(QWidget):
             trims = []
 
             for i, datum in enumerate(data):
-                register = ENUM.register_map.get_output_register(output_num, datum)
+                register = ENUM.get_output_register(output_num, datum)
                 trims.append(float(self.controller.read_float(register)))
 
             return trims

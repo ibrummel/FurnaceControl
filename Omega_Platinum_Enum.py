@@ -70,26 +70,25 @@ class readonly():
                                0x08: 'Soak Active', 0x05: 'Ramping, Ramp Active', 0x0a: 'Soaking, Soak Active',
                                0x10: 'Ramp Soak Paused', 0x80: 'Ramp Soak Error'}
 
-class register_map():
-    def get_output_register(self, output: int, datum: str):
-        output_registers_start = {1: 1024, 2: 1056, 3: 1088, 4: 1120,
-                                  5: 1152, 6: 1184, 7: 1216, 8: 1248}
-        output_registers_offset = {"hw_type":  0,
-                                   'mode': 1,
-                                   'on_off_action': 2,
-                                   'setpoint': 3,
-                                   'pulse_length': 4,
-                                   'on_off_deadband': 6,
-                                   'output_range': 8,
-                                   'retran_reading1': 10,
-                                   'retran_output1': 12,
-                                   'retran_reading2': 14,
-                                   'retran_output2': 16}
+def get_output_register(self, output: int, datum: str):
+    output_registers_start = {1: 1024, 2: 1056, 3: 1088, 4: 1120,
+                              5: 1152, 6: 1184, 7: 1216, 8: 1248}
+    output_registers_offset = {"hw_type":  0,
+                               'mode': 1,
+                               'on_off_action': 2,
+                               'setpoint': 3,
+                               'pulse_length': 4,
+                               'on_off_deadband': 6,
+                               'output_range': 8,
+                               'retran_reading1': 10,
+                               'retran_output1': 12,
+                               'retran_reading2': 14,
+                               'retran_output2': 16}
 
-        if datum not in output_registers_offset:
-            raise ValueError("Datum label supplied ({}) is not available for controller ouputs. "
-                             "Valid data labels {}".format(datum, output_registers_offset.keys()))
-        return output_registers_start[output] + output_registers_offset[datum]
+    if datum not in output_registers_offset:
+        raise ValueError("Datum label supplied ({}) is not available for controller ouputs. "
+                         "Valid data labels {}".format(datum, output_registers_offset.keys()))
+    return output_registers_start[output] + output_registers_offset[datum]
 
 
 
