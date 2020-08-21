@@ -12,7 +12,7 @@ class OmegaPlatinumControllerModbus(QWidget):
         super().__init__()
 
         try:
-            self.controller = modbus.Instrument(comport, 1, mode='MODE_RTU', close_port_after_each_call=False,
+            self.controller = modbus.Instrument(comport, 1, mode='rtu', close_port_after_each_call=False,
                                                 debug=False)
         except Exception as err:
             print(err)
