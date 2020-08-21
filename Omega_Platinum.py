@@ -22,10 +22,10 @@ class OmegaPlatinumControllerModbus(QWidget):
 
         self._SIGFIGS_AFTER_DECIMAL = rounding
 
-    def read_process_temp(self):
+    def get_process_temp(self):
         return np.round(float(self.controller.read_float(640)), self._SIGFIGS_AFTER_DECIMAL)
 
-    def read_system_state(self):
+    def get_system_state(self):
         return ENUM.read.system_state[self.controller.read_register(576)]
 
     def set_system_state(self, state):
@@ -33,7 +33,7 @@ class OmegaPlatinumControllerModbus(QWidget):
             raise ValueError("Cannot set to invalid system state: {}".format(state))
         self.controller.write_register(576, ENUM.write.system_state[state])
 
-    def read_tc_type(self):
+    def get_tc_type(self):
         return ENUM.read.tc_type[self.controller.read_register(643)]
 
     def set_tc_type(self, tc_type):
@@ -41,7 +41,7 @@ class OmegaPlatinumControllerModbus(QWidget):
             raise ValueError("Cannot set thermocouple type to un-enumerated type: {}".format(tc_type))
         self.controller.write_register(643, ENUM.write.tc_type[tc_type])
 
-    def read_output_mode(self, output_num: int):
+    def get_output_mode(self, output_num: int):
         if 1 <= output_num < 8:
             datum = 'mode'
             register = ENUM.get_output_register(output_num, datum)
