@@ -16,9 +16,10 @@ class OmegaPlatinumControllerModbus(QWidget):
                                                 debug=False)
         except Exception as err:
             print(err)
-        finally:
             print("Could not connect to furnace controller, make sure all other control software is closed and you have"
                   " supplied the correct comport (Port Supplied='{}')".format(comport))
+        else:
+            print('Connected to controller without errors.')
 
         self._SIGFIGS_AFTER_DECIMAL = rounding
 
