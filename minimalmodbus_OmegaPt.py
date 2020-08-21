@@ -441,11 +441,11 @@ class Instrument:
         return self._generic_command(
             functioncode,
             registeraddress,
-            bitmapped=bitmapped,
             number_of_decimals=number_of_decimals,
             number_of_registers=1,
             signed=signed,
             payloadformat=_PAYLOADFORMAT_REGISTER,
+            bitmapped=bitmapped,
         )
 
     def write_register(
@@ -909,7 +909,6 @@ class Instrument:
         self,
         functioncode,
         registeraddress,
-        bitmapped=False,
         value=None,
         number_of_decimals=0,
         number_of_registers=0,
@@ -917,6 +916,7 @@ class Instrument:
         signed=False,
         byteorder=BYTEORDER_BIG,
         payloadformat=None,
+        bitmapped=False,
     ):
         """Perform generic command for reading and writing registers and bits.
 
@@ -1593,7 +1593,7 @@ def _parse_payload(
             )
 
         elif payloadformat == _PAYLOADFORMAT_REGISTER and bitmapped == True:
-            return _bytestring_to_bits(registerdata, 8)
+            return _bytestring_to_bits(registerdata, 16)
 
 
 def _embed_payload(slaveaddress, mode, functioncode, payloaddata):
