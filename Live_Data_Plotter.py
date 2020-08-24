@@ -8,6 +8,7 @@ from matplotlib.lines import Line2D
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavToolBar
 
+#FIXME: Update so that an arbitrary number of curves can be plotted.
 
 class LivePlotWidget(QFrame):
     def __init__(self, parent=None, dual_y=True, axes_labels=['x', 'y', 'y2'],

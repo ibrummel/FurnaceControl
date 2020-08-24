@@ -7,7 +7,7 @@ from PyQt5.QtCore import pyqtSignal
 
 
 class OmegaPlatinumControllerModbus(QWidget):
-    temp_ready = pyqtSignal()
+    temp_ready = pyqtSignal(float)
     def __init__(self, comport: str, rounding=2):
         super().__init__()
 
@@ -24,7 +24,9 @@ class OmegaPlatinumControllerModbus(QWidget):
         self._SIGFIGS_AFTER_DECIMAL = rounding
 
     def get_process_temp(self):
-        return np.round(float(self.controller.read_float(640)), self._SIGFIGS_AFTER_DECIMAL)
+        temp = np.round(float(self.controller.read_float(640)), self._SIGFIGS_AFTER_DECIMAL)
+        self.temp_ready.emit(temp)
+        return temp
 
     def get_system_state(self):
         return ENUM.read.system_state[self.controller.read_register(576)]
@@ -85,6 +87,26 @@ class OmegaPlatinumControllerModbus(QWidget):
     def set_ramp_soak_tracking(self, mode: str):
         if mode not in ENUM.write.ramp_soak_tracking:
             raise ValueError("Invalid ramp/soak tracking mode supplied: {}".format(mode))
+        self.controller.write_register(615, ENUM.write.ramp_soak_tracking[mode])
+
+    def get_current_profile_number(self):
+        return int(self.controller.read_register(610))
+
+    def set_current_profile_number(self, profile_num: int):
+        if not isinstance(profile_num, (int, float)):
+            raise TypeError("Cannot set profile to a value with type {}".format(type(profile_num)))
+        elif 1 <= profile_num <= 99:
+            self.controller.write_register(610, int(profile_num))
+        else:
+            raise ValueError("Cannot set a profile number outside the range 1-99. "
+                             "Profile number supplied: {}".format(profile_num))
+
+    def get_ramp_soak_tracking_mode(self):
+        return ENUM.read.ramp_soak_tracking[self.controller.read_register(615)]
+
+    def set_ramp_soak_tracking_mode(self, mode: str):
+        if mode not in ENUM.write.ramp_soak_tracking.keys():
+            raise ValueError('Invalid ramp/soak profile tracking mode supplied: {}.'.format(mode))
         self.controller.write_register(615, ENUM.write.ramp_soak_tracking[mode])
 
     # TODO: Add profile editing and selection
