@@ -3,23 +3,18 @@ from PyQt5.QtCore import QObject, QSize
 from copy import copy
 import numpy as np
 from matplotlib import colors
-from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from numpy import ndarray
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavToolBar
 
-#FIXME: Update so that an arbitrary number of curves can be plotted.
-
-class LivePlotWidget(QFrame):
-    def __init__(self, parent=None, dual_y=True, axes_labels=['x', 'y', 'y2'],
-                 lead=[True, True], lead_length=[3, 3],
-                 head=[True, True], line_color=['#0173b2', '#e74c3c'],
-                 head_color=['#1f78b4', '#ad1f1f'], draw_interval=200):
+class FurnacePlotWidget(QFrame):
+    def __init__(self, lines_info: dict, parent=None, nrows=1, ncols=1, line_width=2,):
         super().__init__(parent)
 
         # Create child widgets
-        self.canvas = LivePlotCanvas(dual_y, axes_labels, lead, lead_length,
-                                     head, line_color, head_color, draw_interval)
+        self.canvas = FurnacePlotCanvas(lines_info, nrows=1, ncols=1, line_width=2,)
         self.toolbar = NavToolBar(self.canvas, self, coordinates=True)
 
         self.init_connections()
@@ -41,179 +36,152 @@ class LivePlotWidget(QFrame):
         # Set layout to be the vbox
         self.setLayout(vbox)
 
-    def update_plot_labels(self, axes_labels: list):
-        self.canvas.change_axes_labels(axes_labels)
+    def update_plot_labels(self, subplot_idx, ax_labels: list):
+        self.canvas.change_axes_labels(subplot_idx, ax_labels)
 
-    def add_data(self, point: list):
-        self.canvas.add_data(point)
+    def add_data(self, line_key: str, point: list, draw_frame=True):
+        self.canvas.add_data(line_key, point, draw_frame)
 
-    def clear_data(self):
-        self.canvas.clear_data()
+    def remove_line(self, line_key: str, draw_frame=False):
+        self.canvas.clear_data(line_key, draw_frame)
 
 
-class LivePlotCanvas(FigCanvas):
-    def __init__(self, dual_y: bool, axes_labels: list, lead: list,
-                 lead_length: list, head: list, line_color: list,
-                 head_color: list, draw_interval: list):
+class FurnacePlotCanvas(FigCanvas):
+    def __init__(self, lines_info: dict, nrows=1, ncols=1, line_width=2,):
 
         # Save init values to class variables
-        self.dual_y = dual_y
-        self.axes_labels = axes_labels
-        self.lead = lead
-        self.lead_length = lead_length
-        for idx, value in enumerate(lead_length):
-            self.lead_length[idx] = int(value)
-        self.head = head
-        self.line_color = line_color
-        self.head_color = head_color
-        self.line_width = 2
+        self.lines_info = lines_info
+        self.line_width = line_width
 
         # Create figure and first set of axes
-        self.figure = Figure(figsize=(5, 5))
-        self.axes = self.figure.add_subplot(111)
-        self.axes2 = self.axes.twinx()
-        if not dual_y:
-            self.axes2.set_visible(False)
-            self.axes2.set_frame_on(False)
-
-        # Plot Data
-        self.x = [0]
-        self.y1 = [0]
-        self.y2 = [0]
-
-        # Create empty dictionaries of main line parts, filled in init_axes
-        self.lines = {}
-        self.lines2 = {}
-        # Create a list to hold old lines (used to store data when we want a color change
-        self.old_lines = []
-        self.old_lines2 = []
-        self.old_line_alphas = []
+        self.figure, self.axes = plt.subplots(nrows=nrows, ncols=ncols, squeeze=False)
+        self._check_axes_assignment()
+        self._check_init_data()
 
         self.init_axes()
         FigCanvas.__init__(self, self.figure)
         self.draw()
 
     def init_axes(self):
-        # Set axes to match the colors of their main lines if we have dual y otherwise primary will stay black
-        self.axes.tick_params(axis='y', labelcolor=self.line_color[0])
-        self.axes2.tick_params(axis='y', labelcolor=self.line_color[1])
+        for i, subplot_row in enumerate(self.axes):
+            for j, subplot in enumerate(subplot_row):
+                # FIXME: Currently does not account for setting axes labels based on data
+                self.change_axes_labels([i, j] ['Time', 'Process Value'])
 
-        # Add labels
-        self.change_axes_labels(self.axes_labels)
+    def _check_axes_assignment(self, check_key=None):
+        for key in self.lines_info:
+            if check_key is not None and key != check_key:
+                continue
+            else:
+                # If there is a non numerical value or no value stored for the subplot index, move the
+                # checked line to the root subplot at [0, 0] and print a message informing the user.
+                try:
+                    self.lines_info[key]['subplot_row'] = int(self.lines_info[key]['subplot_row'])
+                    if self.lines_info[key]['subplot_row'] > self.axes.shape[0] - 1:
+                        print("The line labeled {} had subplot row index outside the current number of subplot rows. "
+                              "This line has been moved to the plot at [0,0]".format(key))
+                        self.lines_info[key]['subplot_row'] = 0
+                        self.lines_info[key]['subplot_col'] = 0
+                except ValueError as err:
+                    print(err, "The line labeled {} had a non-numerical value for subplot row index. "
+                          "This line has been moved to the plot at [0,0]".format(key))
+                    self.lines_info[key]['subplot_row'] = 0
+                    self.lines_info[key]['subplot_col'] = 0
+                except KeyError as err:
+                    print(err, "The line labeled {} had no subplot row index. "
+                          "This line has been moved to the plot at [0,0]".format(key))
+                    self.lines_info[key]['subplot_row'] = 0
+                    self.lines_info[key]['subplot_col'] = 0
 
-    def add_data(self, point: list):
-        self.x.append(point[0])
-        self.y1.append(point[1])
-        if self.dual_y:
-            self.y2.append(point[2])
+                try:
+                    self.lines_info[key]['subplot_col'] = int(self.lines_info[key]['subplot_col'])
+                    if self.lines_info[key]['subplot_col'] > self.axes.shape[1] - 1:
+                        print("The line labeled {} had subplot column index outside the current number of subplot "
+                              "columns. This line has been moved to the plot at [0,0]".format(key))
+                        self.lines_info[key]['subplot_row'] = 0
+                        self.lines_info[key]['subplot_col'] = 0
+                except ValueError as err:
+                    print(err, "The line labeled {} had a non-numerical value for subplot column index. "
+                          "This line has been moved to the plot at [0,0]".format(key))
+                    self.lines_info[key]['subplot_row'] = 0
+                    self.lines_info[key]['subplot_col'] = 0
+                except KeyError as err:
+                    print(err, "The line labeled {} had no subplot column index. "
+                          "This line has been moved to the plot at [0,0]".format(key))
+                    self.lines_info[key]['subplot_row'] = 0
+                    self.lines_info[key]['subplot_col'] = 0
 
-        self._draw_frame()
+    def _check_init_data(self, check_key=None):
+        # for key in self.lines_info:
+        #     if check_key is not None and key != check_key:
+        #         continue
+        #     else:
+        #         try:
+        #
+        pass
 
-    def set_dual_y(self, enable: bool, axes_labels: list):
-        self.dual_y = enable
-        self.axes_labels = axes_labels
-        self.clear_data()
-        if enable:
-            self.axes2.set_frame_on(True)
-            self.axes2.set_visible(True)
-            self.init_axes()
-        elif not enable:
-            # Delete the stuff from the second y axis
-            self.axes2.set_frame_on(False)
-            self.axes2.set_visible(False)
-            self.lines2.clear()
-            self.old_lines2.clear()
-            self.init_axes()
+    def add_data(self, line_key: str, point: list, draw_frame=False):
+        try:
+            self.lines_info[line_key]['x'] = point[0]
+            self.lines_info[line_key]['y'] = point[1]
+        except KeyError as err:
+            print(err, 'Attempted to add data to a non-existant line: {}'.format(line_key))
 
-    def set_head(self, head: list, head_color: list):
-        self.head = head
-        self.head_color = head_color
+        if draw_frame:
+            self._draw_frame()
 
-    def set_lead(self, lead: list):
-        self.lead = lead
+    def change_line_color(self, line_key: str, color: str):
+        try:
+            self.lines_info[line_key]['color'] = color
+        except KeyError as err:
+            print(err, 'Tried to set the color for a non-existant or non-plotted line: {}'.format(line_key))
 
-    def change_line_color(self, line_color: list, head_color: list):
-        self.line_color = line_color
+    def add_line(self, line_key: str, line_info: dict, draw_frame=False):
+        self.lines_info[line_key] = line_info
 
-    def start_new_line(self):
-        self.old_lines.append({'x': copy(self.x), 'y': copy(self.y1)})
+        if draw_frame:
+            self._draw_frame()
 
-        self.old_line_alphas = list(np.linspace(30, 100, len(self.old_lines), False))
-        for idx, value in enumerate(self.old_line_alphas):
-            self.old_line_alphas[idx] = hex(int(256 * (value / 100)))[-2:]
+    def remove_line(self, line_key: str, draw_frame=False):
+        try:
+            self.lines_info.pop(line_key)
+        except KeyError as err:
+            print(err, 'KeyError on trying to remove a plotted line: {}'.format(line_key))
 
-        if self.dual_y:
-            self.old_lines2.append({'x': copy(self.x), 'y': copy(self.y2)})
+        if draw_frame:
+            self._draw_frame()
 
-        self.x.clear()
-        self.y1.clear()
-        self.y2.clear()
+    def change_axes_labels(self, subplot_idx, ax_labels: list, draw_frame=False):
+        try:
+            ax = self.axes[subplot_idx[0], subplot_idx[1]]
+            ax.set_xlabel(ax_labels[0], fontsize=14, weight='bold')
+            ax.set_ylabel(ax_labels[1], fontsize=14, weight='bold')
+        except IndexError as err:
+            print(err, "Attempting to set axes labels on a nonexistant subplot at {}".format(subplot_idx))
 
-    def clear_data(self):
-        self.old_lines.clear()
-        self.x.clear()
-        self.y1.clear()
-        self.y2.clear()
-        self.axes.clear()
-        self.old_lines2.clear()
-        self.axes2.clear()
-        
-        # Re initialize the axes labels
-        self.change_axes_labels(self.axes_labels)
-
-    def change_axes_labels(self, axes_labels: list):
-        self.axes_labels = axes_labels
-        self.axes.set_xlabel(axes_labels[0], fontsize=14, weight='bold')
-        self.axes.set_ylabel(axes_labels[1], fontsize=14, weight='bold')
-        if self.dual_y:
-            self.axes2.set_ylabel(axes_labels[2], fontsize=14, weight='bold')
+        if draw_frame:
+            self._draw_frame()
 
     def _draw_frame(self):
-        # Clear both sets of axes
-        self.axes.clear()
-        self.axes2.clear()
+        # Clear all data
+        for subplot_row in self.axes:
+            for subplot in subplot_row:
+                subplot.clear()
         
         try:
-            # Add the current primary axis data to the plot
-            self.axes.plot(self.x, self.y1, color=self.line_color[0])
-            if self.lead[0]:
-                self.axes.plot(self.x[-self.lead_length[0]:],
-                               self.y1[-self.lead_length[0]:],
-                               color=self.head_color[0])
-            if self.head[0]:
-                self.axes.plot(self.x[-1], self.y1[-1],
-                               color=self.head_color[0])
-            # Plot the old lines for the primary axis
-            prim_color = colors.to_hex(self.line_color[0])
-            for idx, line_data in enumerate(self.old_lines):
-                self.axes.plot(line_data['x'], line_data['y'],
-                               linestyle=':',
-                               color=prim_color+self.old_line_alphas[idx])
-            # Add current secondary axis data to the plot, if necessary
-            if self.dual_y:
-                self.axes2.plot(self.x, self.y2, color=self.line_color[1])
-                if self.lead[1]:
-                    self.axes2.plot(self.x[-self.lead_length[1]:],
-                                    self.y2[-self.lead_length[1]:],
-                                    color=self.head_color[1])
-                if self.head[1]:
-                    self.axes2.plot(self.x[-1], self.y2[-1],
-                                    color=self.head_color[1])
-                    # Plot the old lines for the secondary axis
-                    sec_color = colors.to_hex(self.line_color[1])
-                    for idx, line_data in enumerate(self.old_lines2):
-                        self.axes.plot(line_data['x'], line_data['y'],
-                                       linestyle=':',
-                                       color=sec_color + self.old_line_alphas[idx])
+            for line_key, line_info in self.lines_info.items():
+                ax = self.axes[line_info['subplot_row'], line_info['subplot_col']]
+                ax.plot(line_info['x'], line_info['y'], color=line_info['color'], label=line_key)
+                ax.legend()
+                # Relimit the plot to keep data in view
+                self.axes.relim()
+                self.axes.autoscale_view(True, True, True)
+                # Maybe do this depending on how many things you will have/want to plot
+                # self.change_axes_labels([line_info['subplot_row'], line_info['subplot_col']], line_info[''])
         except IndexError as err:
             print(err, 'Likely a result of attempting to replot too quickly after clearing the old data')
-        # Relimit the plot to keep data in view
-        self.axes.relim()
-        self.axes.autoscale_view(True, True, True)
-        # Relimit the plot to keep data in view for secondary y
-        self.axes2.relim()
-        self.axes2.autoscale_view(True, True, True)
+        except KeyError as err:
+            print(err, "Key error on drawing new frame")
 
-        self.change_axes_labels(self.axes_labels)
         # Draw the plot with new stuff
         self.draw()
