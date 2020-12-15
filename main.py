@@ -43,14 +43,13 @@ class FurnaceLogger(QDialog):
 
         self.data_thread = QThread()
 
-        # Get references for relevant controls
-        # FIXME: This step may not be necessary according to the internet here:
-        #  https://stackoverflow.com/questions/57461720/access-element-from-ui
-        self.combo_monitor_tc = QComboBox()
-        self.combo_controller_tc = QComboBox()
-        self.combo_output_mode = QComboBox()
-        self.combo_profile_tracking = QComboBox()
-        self.combo_profile_number = QComboBox()
+        # FIXME: Uncomment these while writing code, provides useful intellisense,
+        #  but will break the actual UI if left uncommented on run. 
+        # self.combo_monitor_tc = QComboBox()
+        # self.combo_controller_tc = QComboBox()
+        # self.combo_output_mode = QComboBox()
+        # self.combo_profile_tracking = QComboBox()
+        # self.combo_profile_number = QComboBox()
 
         self.init_fields()
         self.init_connections()
@@ -91,7 +90,6 @@ class FurnaceLogger(QDialog):
         tc.ai_channels.add_ai_thrmcpl_chan(tcdevpath)
         tc.ai_thrmcpl_type = self.tc_types['S']
         tc.ai_temp_units = nidaqmx.constants.TemperatureUnits.DEG_C
-
         return tc
 
     def set_external_tc_type(self, type):
