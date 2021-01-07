@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'main.ui'
+# Form implementation generated from reading ui file 'src/ui/main.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -66,15 +66,15 @@ class Ui_Dialog(object):
         self.label = QtWidgets.QLabel(self.groupBox_4)
         self.label.setObjectName("label")
         self.horizontalLayout_4.addWidget(self.label)
-        self.line_trime_output1 = QtWidgets.QLineEdit(self.groupBox_4)
-        self.line_trime_output1.setObjectName("line_trime_output1")
-        self.horizontalLayout_4.addWidget(self.line_trime_output1)
+        self.line_trim_output1 = QtWidgets.QLineEdit(self.groupBox_4)
+        self.line_trim_output1.setObjectName("line_trim_output1")
+        self.horizontalLayout_4.addWidget(self.line_trim_output1)
         self.verticalLayout_3.addLayout(self.horizontalLayout_4)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.line_trim_reading1_2 = QtWidgets.QLineEdit(self.groupBox_4)
-        self.line_trim_reading1_2.setObjectName("line_trim_reading1_2")
-        self.horizontalLayout_3.addWidget(self.line_trim_reading1_2)
+        self.line_trim_reading2 = QtWidgets.QLineEdit(self.groupBox_4)
+        self.line_trim_reading2.setObjectName("line_trim_reading2")
+        self.horizontalLayout_3.addWidget(self.line_trim_reading2)
         self.label_2 = QtWidgets.QLabel(self.groupBox_4)
         self.label_2.setObjectName("label_2")
         self.horizontalLayout_3.addWidget(self.label_2)

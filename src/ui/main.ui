@@ -106,14 +106,14 @@
                 </widget>
                </item>
                <item>
-                <widget class="QLineEdit" name="line_trime_output1"/>
+                <widget class="QLineEdit" name="line_trim_output1"/>
                </item>
               </layout>
              </item>
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_3">
                <item>
-                <widget class="QLineEdit" name="line_trim_reading1_2"/>
+                <widget class="QLineEdit" name="line_trim_reading2"/>
                </item>
                <item>
                 <widget class="QLabel" name="label_2">
