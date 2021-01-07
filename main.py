@@ -1,5 +1,5 @@
 from PyQt5 import uic
-from PyQt5.QtWidgets import QApplication, QMainWindow, QComboBox, QPushButton
+from PyQt5.QtWidgets import QApplication, QMainWindow, QComboBox, QPushButton, QDialog
 from PyQt5.QtCore import QThread, pyqtSignal
 import Omega_Platinum_Enum as ENUM
 import nidaqmx
@@ -20,9 +20,9 @@ class SignalTask(nidaqmx.Task):
         return data
 
 
-class FurnaceLogger(QMainWindow):
+class FurnaceLogger(QDialog):
     def __init__(self, comport: str, tcdevpath="Dev1/ai0"):
-        super().__init__(self)
+        super().__init__()
 
         self.controller = OmegaPlatinumControllerModbus(comport)
 
@@ -34,22 +34,22 @@ class FurnaceLogger(QMainWindow):
                          'R': nidaqmx.constants.ThermocoupleType.R,
                          'S': nidaqmx.constants.ThermocoupleType.S,
                          'B': nidaqmx.constants.ThermocoupleType.B,
-                         'C': nidaqmx.constants.ThermocoupleType.C,}
+                         # 'C': nidaqmx.constants.ThermocoupleType.C,
+                         }
 
         self.external_tc = self.init_external_tc(tcdevpath)
 
-        self.ui = uic.loadUi("./src/ui/main.ui")
+        self.ui = uic.loadUi("./src/ui/main.ui", self)
 
         self.data_thread = QThread()
 
-        # Get references for relevant controls
-        # FIXME: This step may not be necessary according to the internet here:
-        #  https://stackoverflow.com/questions/57461720/access-element-from-ui
-        self.combo_monitor_tc = QComboBox()
-        self.combo_controller_tc = QComboBox()
-        self.combo_output_mode = QComboBox()
-        self.combo_profile_tracking = QComboBox()
-        self.combo_profile_number = QComboBox()
+        # FIXME: Uncomment these while writing code, provides useful intellisense,
+        #  but will break the actual UI if left uncommented on run. 
+        # self.combo_monitor_tc = QComboBox()
+        # self.combo_controller_tc = QComboBox()
+        # self.combo_output_mode = QComboBox()
+        # self.combo_profile_tracking = QComboBox()
+        # self.combo_profile_number = QComboBox()
 
         self.init_fields()
         self.init_connections()
@@ -58,7 +58,7 @@ class FurnaceLogger(QMainWindow):
         self.combo_monitor_tc.addItems(list(self.tc_types.keys()))
         self.combo_controller_tc.addItems(['K', 'J', 'T', 'E', 'N', 'L', 'R', 'S', 'B', 'C'])
         self.combo_output_mode.addItems(list(ENUM.write.output_mode.keys()))
-        self.combo_profile_number.addItems(list(np.linspace(1, 99, 99)))
+        self.combo_profile_number.addItems([str(x) for x in np.linspace(1, 99, 99)])
         self.combo_profile_tracking.addItems(list(ENUM.write.ramp_soak_tracking.keys()))
         self.update_fields()
 
@@ -76,7 +76,7 @@ class FurnaceLogger(QMainWindow):
             self.combo_output_mode.setCurrentText(self.controller.get_output_mode(3))
 
         if not self.combo_profile_number.hasFocus():
-            self.combo_profile_number.setCurrentText(self.controller.get_current_profile_number())
+            self.combo_profile_number.setCurrentText(str(self.controller.get_current_profile_number()))
 
         if not self.combo_profile_tracking.hasFocus():
             self.combo_profile_tracking.setCurrentText(self.controller.get_ramp_soak_tracking_mode())
@@ -90,7 +90,6 @@ class FurnaceLogger(QMainWindow):
         tc.ai_channels.add_ai_thrmcpl_chan(tcdevpath)
         tc.ai_thrmcpl_type = self.tc_types['S']
         tc.ai_temp_units = nidaqmx.constants.TemperatureUnits.DEG_C
-
         return tc
 
     def set_external_tc_type(self, type):
@@ -103,4 +102,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = FurnaceLogger('COM3')
     window.show()
-    sys.exit(app._exec())
+    sys.exit(app.exec_())
