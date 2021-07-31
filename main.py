@@ -137,7 +137,8 @@ class FurnaceLogger(QDialog):
         self.ui.line_trim_output2.setText(str(trims[3]))
         if self.ui.combo_output_mode.currentText() != 'Retransmission':
             self.ui.gbox_trim_setup.setDisabled(True)
-        self.ui.spin_profile_number.setValue(self.controller.get_current_profile_number())
+        self.ui.spin_profile_number.setValue(self.controller.get_current_edit_profile_number())
+        self.controller.set_current_profile_number(self.ui.spin_profile_number.value())
         self.ui.combo_profile_tracking.setCurrentText(self.controller.get_ramp_soak_tracking_mode())
 
     def init_connections(self):
@@ -185,7 +186,7 @@ class FurnaceLogger(QDialog):
 
             with open(self.log_file, mode) as log_file:
                 log_file.write("Furnace Run Notes:,{}".format(self.ui.text_log_notes.toPlainText()))
-                log_file.write("Timestamp,Controller Temp,External Temp\n")
+                log_file.write("\nTimestamp,Controller Temp,External Temp\n")
             # Get the element tree with the profile information and write it to a modified version of the log file name
             profile_tree = self.profile_editor.generate_profile_xml()
             profile_tree.write(self.log_file.replace(os.path.splitext(self.log_file)[1], "_profile_settings.xml"))
@@ -297,7 +298,7 @@ class FurnaceLogger(QDialog):
         self.profile_number_changed.emit(profile_num)
 
     def get_selected_profile(self, ):
-        return int(self.controller.get_current_profile_number())
+        return int(self.controller.get_current_edit_profile_number())
 
     def set_profile_tracking_mode(self, tracking_mode):
         self.controller.set_ramp_soak_tracking_mode(tracking_mode)
@@ -447,7 +448,7 @@ class ProfileSettingsForm(QWidget):
         self.init_fields()
         self.init_connections()
 
-        self.read_profile(self.parent.get_selected_profile())
+        self.read_profile(self.parent.controller.get_current_edit_profile_number())
 
     def init_fields(self):
         self.ui.spin_profile_num.setRange(1, 99)

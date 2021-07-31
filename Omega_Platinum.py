@@ -16,7 +16,7 @@ class OmegaPlatinumControllerModbus(QWidget):
 
         try:
             self.controller = modbus.Instrument(comport, 1, mode='rtu', close_port_after_each_call=False,
-                                                debug=False)
+                                                debug=True)
         except Exception as err:
             print(err)
             print("Could not connect to furnace controller, make sure all other control software is closed and you have"
@@ -90,22 +90,24 @@ class OmegaPlatinumControllerModbus(QWidget):
     ###############################################################################################
     # PROFILE SPECIFIC SETTINGS
     ###############################################################################################
-    def get_current_profile_number(self):
+    def get_current_edit_profile_number(self):
         return int(self.controller.read_register(610))
+
+    def get_current_run_profile_number(self):
+        return int(self.controller.read_register(609))
 
     def set_current_profile_number(self, profile_num: int):
         if not isinstance(profile_num, (int, float)):
             raise TypeError("Cannot set profile to a value with type {}".format(type(profile_num)))
         elif 1 <= profile_num <= 99:
-            self.controller.write_register(610, int(profile_num))
+            self.controller.write_register(609, int(profile_num))  # Write the profile that will start on clicking run
+            self.controller.write_register(610, int(profile_num))  # Write the profile data to load
         else:
             raise ValueError("Cannot set a profile number outside the range 1-99. "
                              "Profile number supplied: {}".format(profile_num))
 
     # Note: The following get/set functions rely on the user setting the current profile number
     #  before accessing them in order to return/set the desired information.
-    # Fixme: Maybe add helper functions that take the desired profile number too. But
-    #  might add a lot of overhead on repeated calls.
 
     def get_segments_per_profile(self):
         return int(self.controller.read_register(612))
