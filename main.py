@@ -537,6 +537,10 @@ class ProfileSettingsForm(QWidget):
 
         return profile_xml
 
+    def load_xml_profile(self):
+        # FIXME: Write loader for xml files to load profiles (including linked) back into the controller.
+        pass
+
     def read_profile(self, profile: int):
         self.current_profile['number'] = profile
         self.parent.controller.set_current_profile_number(profile)

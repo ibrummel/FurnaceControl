@@ -1406,7 +1406,9 @@ class Instrument:
             self._print_debug(text)
 
         if not answer:
-            raise NoResponseError("No communication with the instrument (no answer)")
+            print("Communication error. No response. Trying again")
+            return self._communicate(str(request, encoding="latin1"), number_of_bytes_to_read)
+            # raise NoResponseError("No communication with the instrument (no answer)")
 
         return answer
 

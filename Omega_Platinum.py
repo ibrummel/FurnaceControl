@@ -16,7 +16,7 @@ class OmegaPlatinumControllerModbus(QWidget):
 
         try:
             self.controller = modbus.Instrument(comport, 1, mode='rtu', close_port_after_each_call=False,
-                                                debug=True)
+                                                debug=False)
         except Exception as err:
             print(err)
             print("Could not connect to furnace controller, make sure all other control software is closed and you have"
