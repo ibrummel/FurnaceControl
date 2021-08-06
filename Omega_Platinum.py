@@ -16,7 +16,7 @@ class OmegaPlatinumControllerModbus(QWidget):
 
         try:
             self.controller = modbus.Instrument(comport, 1, mode='rtu', close_port_after_each_call=False,
-                                                debug=False)
+                                                debug=True, )
         except Exception as err:
             print(err)
             print("Could not connect to furnace controller, make sure all other control software is closed and you have"
@@ -165,52 +165,117 @@ class OmegaPlatinumControllerModbus(QWidget):
         self.controller.write_register(617, soak_event)
 
     def get_segment_setpoint(self):
-        return self.read_multi_register(618, 'float')
+        data = self.controller.read_registers(618, 2)
+        return self.unpack_float(data)
 
     def set_segment_setpoint(self, setpoint: float):
-        self.write_multi_register(618, 'float', setpoint)
+        data = self.pack_float(setpoint)
+        self.controller.write_registers(618, data)
 
     def get_ramp_time_msec(self):
-        return self.read_multi_register(620, 'int')
+        data = self.controller.read_registers(620, 2)
+        return self.unpack_int(data)
 
     def get_ramp_time_formatted(self):
         return timedelta(milliseconds=self.get_ramp_time_msec()).__str__()
 
     def set_ramp_time_msec(self, ramp_time_msec: float):
-        self.write_multi_register(620, 'int', ramp_time_msec)
+        data = self.pack_float(ramp_time_msec)
+        self.controller.write_registers(620, data)
 
     def get_soak_time_msec(self):
-        return self.read_multi_register(622, 'int')
+        data = self.controller.read_registers(622, 2)
+        return self.unpack_int(data)
 
     def get_soak_time_formatted(self):
         return timedelta(milliseconds=self.get_soak_time_msec()).__str__()
 
     def set_soak_time_msec(self, dwell_time_msec: float):
-        self.write_multi_register(622, 'int', dwell_time_msec)
+        data = self.pack_float(dwell_time_msec)
+        self.controller.write_registers(620, data)
 
     ###############################################################################################
     # MULTI REGISTER VALUE HELPER FUNCTIONS
     ###############################################################################################
-    def read_multi_register(self, start_register: int, value_type: str):
-        data = self.controller.read_registers(start_register, 2)
+    # def read_two_register_value(self, start_register: int, value_type: str):
+    #     data = self.controller.read_registers(start_register, 2)
+    #     packed = struct.pack('>HH', data[0], data[1])
+    #
+    #     if value_type == 'float':
+    #         return struct.unpack('>f', packed)[0]
+    #     elif value_type == 'int':
+    #         return struct.unpack('>L', packed)[0]
+    #     else:
+    #         raise TypeError("Invalid return type requested: {}".format(value_type))
+    #
+    # def write_two_register_value(self, start_register: int, value_type: type, value):
+    #     if value_type == 'float':
+    #         packed = struct.pack('>f', value)
+    #     elif value_type == 'int':
+    #         packed = struct.pack('>L', value)
+    #     else:
+    #         raise TypeError("Invalid conversion type requested: {}".format(value_type))
+    #
+    #     values = list(struct.unpack('>HH', packed))
+    #     self.controller.write_registers(start_register, values)
+
+    @staticmethod
+    def unpack_float(data: tuple):
         packed = struct.pack('>HH', data[0], data[1])
+        return struct.unpack('>f', packed)[0]
 
-        if value_type == 'float':
-            return struct.unpack('>f', packed)[0]
-        elif value_type == 'int':
-            return struct.unpack('>L', packed)[0]
-        else:
-            raise TypeError("Invalid return type requested: {}".format(value_type))
+    @staticmethod
+    def unpack_int(data: tuple):
+        packed = struct.pack('>HH', data[0], data[1])
+        return struct.unpack('>L', packed)[0]
 
-    def write_multi_register(self, start_register: int, value_type: type, value):
-        if value_type == 'float':
-            packed = struct.pack('>f', value)
-        elif value_type == 'int':
-            packed = struct.pack('>L', value)
-        else:
-            raise TypeError("Invalid conversion type requested: {}".format(value_type))
+    @staticmethod
+    def pack_float(value: float):
+        packed = struct.pack('>f', value)
+        return list(struct.unpack('>HH', packed))
 
-        values = list(struct.unpack('>HH', packed))
-        self.controller.write_registers(start_register, values)
+    @staticmethod
+    def pack_int(value: int):
+        packed = struct.pack('>L', value)
+        return list(struct.unpack('>HH', packed))
 
-    # TODO: Add profile editing and selection
+    def read_full_segment(self):
+        data = self.controller.read_registers(616, 8)
+        ramp = bool(data[0])  # Register 616
+        soak = bool(data[1])  # Register 617
+        rTime = self.unpack_int((data[2], data[3]))  # Registers 618, 619
+        sTime = self.unpack_int((data[4], data[5]))  # Registers 620, 621
+        setpoint = self.unpack_float((data[6], data[7]))  # Registers 622, 623
+
+        return dict(ramp=ramp,
+                    soak=soak,
+                    rTime=rTime,
+                    sTime=sTime,
+                    setpoint=setpoint)
+
+    def write_full_segment(self, ramp: bool, soak: bool, rTime: int, sTime: int, setpoint: float):
+        data = [ramp]  # Writes to Register 616
+        data.append(soak)  # Writes to Register 617
+        data.extend(self.pack_int(rTime))  # Writes to Registers 618, 619
+        data.extend(self.pack_int(sTime))  # Writes to Registers 620, 621
+        data.extend(self.pack_float(setpoint))  # Writes to Registers 622, 623
+
+        self.controller.write_registers(616, data)
+
+    def read_profile_info(self):
+        data = self.controller.read_registers(612, 4)
+
+        return dict(numSegments=int(data[0]),  # Register 612
+                    linkAction=ENUM.Read.ramp_soak_link_action[data[1]],  # Register 613
+                    linkProfile=int(data[2]),  # Register 614
+                    trackingMode=ENUM.Read.ramp_soak_tracking[data[3]],  # Register 615
+                    )
+
+    def write_profile_info(self, numSegments: int, linkAction: str, linkProfile: int, trackingMode: str):
+        data = [numSegments,  # Writes register 612
+                ENUM.Write.ramp_soak_link_action[linkAction],  # Writes register 613
+                linkProfile,  # Writes register 614
+                ENUM.Write.ramp_soak_tracking[trackingMode],  # Writes register 615
+                ]
+
+        self.controller.write_registers(612, data)

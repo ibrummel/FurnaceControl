@@ -190,7 +190,7 @@ class FurnaceLogger(QDialog):
             # Get the element tree with the profile information and write it to a modified version of the log file name
             profile_tree = self.profile_editor.generate_profile_xml()
             profile_tree.write(self.log_file.replace(os.path.splitext(self.log_file)[1], "_profile_settings.xml"))
-            
+
             self.ui.btn_logging_state.setText("Stop Logging")
             if not self.timer_log_interval.isActive():
                 self.timer_log_interval.start(int(self.log_interval_timeout))
@@ -544,25 +544,16 @@ class ProfileSettingsForm(QWidget):
     def read_profile(self, profile: int):
         self.current_profile['number'] = profile
         self.parent.controller.set_current_profile_number(profile)
-        self.current_profile['trackingMode'] = self.controller.get_ramp_soak_tracking_mode()
-        self.current_profile['numSegments'] = self.controller.get_segments_per_profile()
-        self.current_profile['linkAction'] = self.controller.get_link_action()
-        self.current_profile['linkProfile'] = self.controller.get_link_profile()
+        self.current_profile.update(self.controller.read_profile_info())
         for i in range(1, 9):  # Note 1-9 because range does not include last value
             self.controller.set_current_segment_number(i)
             self.current_profile[i] = dict(
-                active=(True if i <= self.current_profile['numSegments'] else False),
-                ramp=(True if self.controller.get_ramp_event_flag() else False),
-                soak=(True if self.controller.get_soak_event_flag() else False),
-                rTime=self.controller.get_ramp_time_msec(),
-                sTime=self.controller.get_soak_time_msec(),
-                setpoint=self.controller.get_segment_setpoint(),
-            )
+                active=(True if i <= self.current_profile['numSegments'] else False), )
+            self.current_profile[i].update(self.controller.read_full_segment())
         self.current_profile['edited'] = False
         self.update_fields()
 
     def read_segment_fields(self):
-        start = datetime.now()
         for i in range(1, self.current_profile['numSegments'] + 1):
             fixed_ramp_time = self.handle_time_input(self.ramp_time_lines[i].text())
             if fixed_ramp_time is not None:
@@ -585,9 +576,6 @@ class ProfileSettingsForm(QWidget):
                 'setpoint': float(self.setpoint_lines[i].text())
             }
             self.current_profile[i] = new_segment
-
-        # print("Updating from {} segment fields took: {}".format(self.current_profile['numSegments'],
-        #                                                         datetime.now() - start))
 
     def change_profile(self, profile_num: int):
         # Fixme: check for changes to save before reading new profile
@@ -637,18 +625,18 @@ class ProfileSettingsForm(QWidget):
 
     def write_profile(self):
         self.controller.set_current_profile_number(self.current_profile['number'])
-        self.controller.set_ramp_soak_tracking_mode(self.current_profile['trackingMode'])
-        self.controller.set_segments_per_profile(self.current_profile['numSegments'])
-        self.controller.set_link_action(self.current_profile['linkAction'])
-        self.controller.set_link_profile(self.current_profile['linkProfile'])
+        self.controller.write_profile_info(numSegments=self.current_profile['numSegments'],
+                                           linkAction=self.current_profile['linkAction'],
+                                           linkProfile=self.current_profile['linkProfile'],
+                                           trackingMode=self.current_profile['trackingMode'])
         for i in range(1, 9):  # Note 1-9 because range does not include last value
             self.controller.set_current_segment_number(i)
             if self.current_profile[i]['active']:
-                self.controller.set_ramp_event_flag(self.current_profile[i]['ramp'])
-                self.controller.set_soak_event_flag(self.current_profile[i]['soak'])
-                self.controller.set_ramp_time_msec(self.current_profile[i]['rTime'])
-                self.controller.set_soak_time_msec(self.current_profile[i]['sTime'])
-                self.controller.set_segment_setpoint(self.current_profile[i]['setpoint'])
+                self.controller.write_full_segment(ramp=self.current_profile[i]['ramp'],
+                                                   soak=self.current_profile[i]['soak'],
+                                                   rTime=self.current_profile[i]['rTime'],
+                                                   sTime=self.current_profile[i]['sTime'],
+                                                   setpoint=self.current_profile[i]['setpoint'])
         self.current_profile['edited'] = False
         self.read_profile(self.current_profile['number'])
 
