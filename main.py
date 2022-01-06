@@ -100,6 +100,8 @@ class FurnaceLogger(QDialog):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        self.setup_plot_lines()
+
         self.profile_editor = ProfileSettingsForm(parent=self)
         self.heat_init_timer = QTimer()
         self.live_read_timer = QTimer()
@@ -177,8 +179,10 @@ class FurnaceLogger(QDialog):
 
     def setup_plot_lines(self):
         # Add lines to the live plot widget
-        self.ui.live_plot.canvas.add_line('Controller', {'color': '#0173b2', 'x': [], 'y': []})
-        self.ui.live_plot.canvas.add_line('External', {'color': '#de8f05', 'x': [], 'y': []})
+        self.ui.live_plot.canvas.add_line('Controller', {'color': '#0173b2', 'x': [], 'y': [], 'subplot_row': 0,
+                                                         'subplot_col': 0})
+        self.ui.live_plot.canvas.add_line('External', {'color': '#de8f05', 'x': [], 'y': [], 'subplot_row': 0,
+                                                       'subplot_col': 0})
 
     def set_logging_state(self, startonly=False):
         if self.ui.btn_logging_state.text() == "Start Logging":

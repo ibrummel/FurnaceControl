@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1323</width>
-    <height>693</height>
+    <height>1070</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -326,7 +326,7 @@
       </layout>
      </item>
      <item>
-      <widget class="QFrame" name="frame">
+      <widget class="FurnacePlotWidget" name="live_plot">
        <property name="frameShape">
         <enum>QFrame::StyledPanel</enum>
        </property>
@@ -363,6 +363,14 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FurnacePlotWidget</class>
+   <extends>QFrame</extends>
+   <header>Furnace_Plot_Widget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

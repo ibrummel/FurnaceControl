@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\main.ui'
+# Form implementation generated from reading ui file '.\src\ui\main.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1323, 693)
+        MainWindow.resize(1323, 1070)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(MainWindow)
         self.horizontalLayout_2.setSpacing(3)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
@@ -202,11 +202,11 @@ class Ui_MainWindow(object):
         self.horizontalLayout_11.addWidget(self.lbl_external_temp)
         self.horizontalLayout_9.addWidget(self.groupbox_external_temp)
         self.verticalLayout_2.addLayout(self.horizontalLayout_9)
-        self.frame = QtWidgets.QFrame(MainWindow)
-        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frame.setObjectName("frame")
-        self.verticalLayout_2.addWidget(self.frame)
+        self.live_plot = FurnacePlotWidget(MainWindow)
+        self.live_plot.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.live_plot.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.live_plot.setObjectName("live_plot")
+        self.verticalLayout_2.addWidget(self.live_plot)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -255,3 +255,4 @@ class Ui_MainWindow(object):
         self.lbl_external_temp.setText(_translate("MainWindow", "Temp Not Read"))
         self.btn_start_run.setText(_translate("MainWindow", "Start Furnace Run"))
 
+from Furnace_Plot_Widget import FurnacePlotWidget
