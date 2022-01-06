@@ -270,12 +270,16 @@ class FurnaceLogger(QDialog):
             self.timer_log_interval.setInterval(self.log_interval_timeout)
 
     def update_temps(self):
-        self.ui.lbl_external_temp.setText("{:.2f} C".format(self.external_tc.read_temp()))
-        self.ui.lbl_controller_temp.setText("{:.2f} C".format(self.controller.get_process_temp()))
+        ext_temp = self.external_tc.read_temp()
+        ctrl_temp = self.controller.get_process_temp()
+
+        self.ui.lbl_external_temp.setText("{:.2f} C".format(ext_temp))
+        self.ui.lbl_controller_temp.setText("{:.2f} C".format(ctrl_temp))
+
+        return ext_temp, ctrl_temp
 
     def write_log(self):
-        # print("Opening {} to write log entry".format(self.log_file))
-
+        ext_temp, ctrl_temp = self.update_temps()
         with open(self.log_file, 'a') as logfile:
             tstamp = datetime.now()
             t_str = tstamp.strftime('%Y-%m-%d %H:%M:%S')
