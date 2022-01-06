@@ -16,7 +16,7 @@ class OmegaPlatinumControllerModbus(QWidget):
 
         try:
             self.controller = modbus.Instrument(comport, 1, mode='rtu', close_port_after_each_call=False,
-                                                debug=True, )
+                                                debug=False, )
         except Exception as err:
             print(err)
             print("Could not connect to furnace controller, make sure all other control software is closed and you have"
@@ -243,9 +243,9 @@ class OmegaPlatinumControllerModbus(QWidget):
         data = self.controller.read_registers(616, 8)
         ramp = bool(data[0])  # Register 616
         soak = bool(data[1])  # Register 617
-        rTime = self.unpack_int((data[2], data[3]))  # Registers 618, 619
-        sTime = self.unpack_int((data[4], data[5]))  # Registers 620, 621
-        setpoint = self.unpack_float((data[6], data[7]))  # Registers 622, 623
+        setpoint = self.unpack_float((data[2], data[3]))  # Registers 618, 619
+        rTime = self.unpack_int((data[4], data[5]))  # Registers 620, 621
+        sTime = self.unpack_int((data[6], data[7]))  # Registers 622, 623
 
         return dict(ramp=ramp,
                     soak=soak,
@@ -256,9 +256,9 @@ class OmegaPlatinumControllerModbus(QWidget):
     def write_full_segment(self, ramp: bool, soak: bool, rTime: int, sTime: int, setpoint: float):
         data = [ramp]  # Writes to Register 616
         data.append(soak)  # Writes to Register 617
-        data.extend(self.pack_int(rTime))  # Writes to Registers 618, 619
-        data.extend(self.pack_int(sTime))  # Writes to Registers 620, 621
-        data.extend(self.pack_float(setpoint))  # Writes to Registers 622, 623
+        data.extend(self.pack_float(setpoint))  # Writes to Registers 618, 619
+        data.extend(self.pack_int(rTime))  # Writes to Registers 620, 621
+        data.extend(self.pack_int(sTime))  # Writes to Registers 622, 623
 
         self.controller.write_registers(616, data)
 
