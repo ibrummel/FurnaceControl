@@ -175,8 +175,16 @@ class FurnaceLogger(QDialog):
             self.ui.btn_log_file.setDisabled(True)
             self.ui.line_log_interval.setDisabled(True)
 
+    def setup_plot_lines(self):
+        # Add lines to the live plot widget
+        self.ui.live_plot.canvas.add_line('Controller', {'color': '#0173b2', 'x': [], 'y': []})
+        self.ui.live_plot.canvas.add_line('External', {'color': '#de8f05', 'x': [], 'y': []})
+
     def set_logging_state(self, startonly=False):
         if self.ui.btn_logging_state.text() == "Start Logging":
+            self.ui.live_plot.clear_data()
+            self.setup_plot_lines()
+
             self.check_log_file()
             if os.path.exists(self.log_file):
                 raise UserWarning("Error deleting log file that already exists, new furnace run data will be appended.")
@@ -186,7 +194,8 @@ class FurnaceLogger(QDialog):
 
             with open(self.log_file, mode) as log_file:
                 log_file.write("Furnace Run Notes:,{}".format(self.ui.text_log_notes.toPlainText()))
-                log_file.write("\nTimestamp,Controller Temp,External Temp\n")
+                log_file.write("\nTimestamp,Controller Temp,Controller TC Type, External Temp, External TC Type\n")
+            self.write_log()
             # Get the element tree with the profile information and write it to a modified version of the log file name
             profile_tree = self.profile_editor.generate_profile_xml()
             profile_tree.write(self.log_file.replace(os.path.splitext(self.log_file)[1], "_profile_settings.xml"))
@@ -264,13 +273,17 @@ class FurnaceLogger(QDialog):
         # print("Opening {} to write log entry".format(self.log_file))
 
         with open(self.log_file, 'a') as logfile:
-            ext_temp = self.external_tc.read_temp()
-            ctrl_temp = self.controller.get_process_temp()
-            timestamp = datetime.now()
-            logfile.write('{timestamp},{ctrl_temp},{ext_temp}\n'.format(timestamp=timestamp.__str__(),
-                                                                        ctrl_temp=ctrl_temp, ext_temp=ext_temp))
-
-        self.update_temps()
+            tstamp = datetime.now()
+            t_str = tstamp.strftime('%Y-%m-%d %H:%M:%S')
+            ctrl_tc = self.controller.get_tc_type()
+            ext_tc = self.external_tc.get_tc_type()
+            logfile.write('{timestamp},{ctrl_temp},{ctrl_tc},{ext_temp},{ext_tc}\n'.format(timestamp=t_str,
+                                                                                           ctrl_temp=ctrl_temp,
+                                                                                           ctrl_tc=ctrl_tc,
+                                                                                           ext_temp=ext_temp,
+                                                                                           ext_tc=ext_tc))
+        self.ui.live_plot.add_data('Controller', [tstamp, ctrl_temp])
+        self.ui.live_plot.add_data('External', [tstamp, ext_temp])
 
     def set_controller_tc_type(self, tc_type):
         self.controller.set_tc_type(tc_type)
