@@ -16,6 +16,7 @@ from src.ui.profile_settings_ui import Ui_ProfileSettingsDialog
 import sys
 import xml.etree.ElementTree as ET
 from Omega_Platinum import OmegaPlatinumControllerModbus
+import minimalmodbus_OmegaPt as modbus
 from datetime import timedelta, datetime
 
 
@@ -88,14 +89,14 @@ class SignalThermocouple(QObject):
 class FurnaceLogger(QDialog):
     control_output = 3
     heat_init_temp = 120
-    profile_number_changed = pyqtSignal(int)
 
     def __init__(self, comport: str, tcdevpath="Dev1/ai0"):
         super(FurnaceLogger, self).__init__()
 
         self.controller = OmegaPlatinumControllerModbus(comport)
-
         self.external_tc = SignalThermocouple('Ext_TC', tcdevpath)
+        self.control_temp = None
+        self.external_temp = None
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -198,7 +199,7 @@ class FurnaceLogger(QDialog):
 
             with open(self.log_file, mode) as log_file:
                 log_file.write("Furnace Run Notes:,{}".format(self.ui.text_log_notes.toPlainText()))
-                log_file.write("\nTimestamp,Controller Temp,Controller TC Type, External Temp, External TC Type\n")
+                log_file.write("\nTimestamp,Controller Temp,Controller TC Type, External Temp, External TC Type, Runstate\n")
             self.write_log()
             # Get the element tree with the profile information and write it to a modified version of the log file name
             profile_tree = self.profile_editor.generate_profile_xml()
@@ -276,6 +277,8 @@ class FurnaceLogger(QDialog):
         self.ui.lbl_external_temp.setText("{:.2f} C".format(ext_temp))
         self.ui.lbl_controller_temp.setText("{:.2f} C".format(ctrl_temp))
 
+        self.control_temp = ctrl_temp
+        self.external_temp = ext_temp
         return ext_temp, ctrl_temp
 
     def write_log(self):
@@ -285,11 +288,13 @@ class FurnaceLogger(QDialog):
             t_str = tstamp.strftime('%Y-%m-%d %H:%M:%S')
             ctrl_tc = self.controller.get_tc_type()
             ext_tc = self.external_tc.get_tc_type()
-            logfile.write('{timestamp},{ctrl_temp},{ctrl_tc},{ext_temp},{ext_tc}\n'.format(timestamp=t_str,
+            runstate = self.controller.get_system_state()
+            logfile.write('{timestamp},{ctrl_temp},{ctrl_tc},{ext_temp},{ext_tc},{runstate}\n'.format(timestamp=t_str,
                                                                                            ctrl_temp=ctrl_temp,
                                                                                            ctrl_tc=ctrl_tc,
                                                                                            ext_temp=ext_temp,
-                                                                                           ext_tc=ext_tc))
+                                                                                           ext_tc=ext_tc,
+                                                                                           runstate=runstate))
         self.ui.live_plot.add_data('Controller', [tstamp, ctrl_temp])
         self.ui.live_plot.add_data('External', [tstamp, ext_temp])
 
@@ -316,7 +321,7 @@ class FurnaceLogger(QDialog):
     def set_selected_profile(self, profile_num):
         self.controller.set_current_profile_number(profile_num)
         self.ui.combo_profile_tracking.setCurrentText(self.controller.get_ramp_soak_tracking_mode())
-        self.profile_number_changed.emit(profile_num)
+        self.profile_editor.ui.spin_profile_num.setValue(profile_num)
 
     def get_selected_profile(self, ):
         return int(self.controller.get_current_edit_profile_number())
@@ -407,7 +412,15 @@ class FurnaceLogger(QDialog):
 
     def check_furnace_running(self):
         runstate = self.controller.get_system_state()
-        if runstate not in ['Idle']:
+        if runstate == 'Wait' and self.control_temp < 110:
+            if self.controller.get_tc_type() != "S":
+                self.ui.combo_controller_tc.setCurrentText("S")
+                self.controller.set_tc_type("S")
+            if self.ext_temp < 50:
+                if self.timer_log_interval.isActive():
+                    self.timer_log_interval.stop()
+                self.controller.set_system_state("Idle")
+        elif runstate not in ['Idle']:
             return
         else:
             self.ui.btn_start_run.setText("Start Furnace Run")
@@ -494,7 +507,6 @@ class ProfileSettingsForm(QWidget):
             widget.clicked.connect(self.read_segment_fields)
         for key, widget in self.dwell_time_lines.items():
             widget.editingFinished.connect(self.read_segment_fields)
-        self.parent.profile_number_changed.connect(self.read_profile)
         self.ui.btn_ok.clicked.connect(self.ok)
         self.ui.btn_apply.clicked.connect(self.apply)
         self.ui.btn_cancel.clicked.connect(self.cancel)
@@ -563,14 +575,21 @@ class ProfileSettingsForm(QWidget):
         pass
 
     def read_profile(self, profile: int):
+        # print('Loading profile number {}'.format(profile))
         self.current_profile['number'] = profile
         self.parent.controller.set_current_profile_number(profile)
         self.current_profile.update(self.controller.read_profile_info())
         for i in range(1, 9):  # Note 1-9 because range does not include last value
-            self.controller.set_current_segment_number(i)
-            self.current_profile[i] = dict(
-                active=(True if i <= self.current_profile['numSegments'] else False), )
-            self.current_profile[i].update(self.controller.read_full_segment())
+            try:
+                self.controller.set_current_segment_number(i)
+                self.current_profile[i] = dict(
+                    active=(True if i <= self.current_profile['numSegments'] else False), )
+                self.current_profile[i].update(self.controller.read_full_segment())
+            except modbus.NoResponseError as err:
+                print(err)
+                print("Sleeping 0.2s then retrying load of profile {}".format(profile))
+                sleep(0.2)
+                return self.read_profile(profile)
         self.current_profile['edited'] = False
         self.update_fields()
 

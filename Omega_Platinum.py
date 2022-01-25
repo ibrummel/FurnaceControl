@@ -5,6 +5,7 @@ import numpy as np
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import pyqtSignal
 import struct
+from time import sleep
 from datetime import timedelta
 
 
@@ -15,7 +16,7 @@ class OmegaPlatinumControllerModbus(QWidget):
         super(OmegaPlatinumControllerModbus, self).__init__()
 
         try:
-            self.controller = modbus.Instrument(comport, 1, mode='rtu', close_port_after_each_call=False,
+            self.controller = modbus.Instrument(comport, 1, mode='rtu', close_port_after_each_call=True,
                                                 debug=False, )
         except Exception as err:
             print(err)
@@ -240,6 +241,7 @@ class OmegaPlatinumControllerModbus(QWidget):
         return list(struct.unpack('>HH', packed))
 
     def read_full_segment(self):
+        # sleep(0.25)
         data = self.controller.read_registers(616, 8)
         ramp = bool(data[0])  # Register 616
         soak = bool(data[1])  # Register 617
@@ -247,6 +249,7 @@ class OmegaPlatinumControllerModbus(QWidget):
         rTime = self.unpack_int((data[4], data[5]))  # Registers 620, 621
         sTime = self.unpack_int((data[6], data[7]))  # Registers 622, 623
 
+        # sleep(0.25)
         return dict(ramp=ramp,
                     soak=soak,
                     rTime=rTime,
