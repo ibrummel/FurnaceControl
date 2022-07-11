@@ -199,7 +199,8 @@ class FurnaceLogger(QDialog):
 
             with open(self.log_file, mode) as log_file:
                 log_file.write("Furnace Run Notes:,{}".format(self.ui.text_log_notes.toPlainText()))
-                log_file.write("\nTimestamp,Controller Temp,Controller TC Type, External Temp, External TC Type, Runstate\n")
+                log_file.write(
+                    "\nTimestamp,Controller Temp,Controller TC Type, External Temp, External TC Type, Runstate\n")
             self.write_log()
             # Get the element tree with the profile information and write it to a modified version of the log file name
             profile_tree = self.profile_editor.generate_profile_xml()
@@ -290,11 +291,11 @@ class FurnaceLogger(QDialog):
             ext_tc = self.external_tc.get_tc_type()
             runstate = self.controller.get_system_state()
             logfile.write('{timestamp},{ctrl_temp},{ctrl_tc},{ext_temp},{ext_tc},{runstate}\n'.format(timestamp=t_str,
-                                                                                           ctrl_temp=ctrl_temp,
-                                                                                           ctrl_tc=ctrl_tc,
-                                                                                           ext_temp=ext_temp,
-                                                                                           ext_tc=ext_tc,
-                                                                                           runstate=runstate))
+                                                                                                      ctrl_temp=ctrl_temp,
+                                                                                                      ctrl_tc=ctrl_tc,
+                                                                                                      ext_temp=ext_temp,
+                                                                                                      ext_tc=ext_tc,
+                                                                                                      runstate=runstate))
         self.ui.live_plot.add_data('Controller', [tstamp, ctrl_temp])
         self.ui.live_plot.add_data('External', [tstamp, ext_temp])
 
@@ -342,7 +343,8 @@ class FurnaceLogger(QDialog):
             self.ui.line_trim_output1.setText('10')
             self.ui.line_trim_reading2.setText('100')
             self.ui.line_trim_output2.setText('1')
-            self.controller.set_retransmission_trim(0, 10, 100, 1)
+            self.controller.set_retransmission_trim(output_num=self.control_output, reading1=0., output1=10.,
+                                                    reading2=100., output2=1.)
             # Start the controller for constant load heating
             self.controller.set_system_state("Run")
             # Start checking every 5 seconds if the external TC reads >=120C to switch over TC type and start normal
@@ -395,7 +397,8 @@ class FurnaceLogger(QDialog):
                 self.ui.line_trim_output1.setText('0')
                 self.ui.line_trim_reading2.setText('100')
                 self.ui.line_trim_output2.setText('1')
-                self.controller.set_retransmission_trim(0, 0, 100, 1)
+                self.controller.set_retransmission_trim(output_num=self.control_output, reading1=0., output1=0.,
+                                                        reading2=100., output2=1.)
                 self.ui.combo_output_mode.setCurrentText('PID')
                 self.controller.set_output_mode(self.control_output, "PID")
 
@@ -416,9 +419,12 @@ class FurnaceLogger(QDialog):
             if self.controller.get_tc_type() != "S":
                 self.ui.combo_controller_tc.setCurrentText("S")
                 self.controller.set_tc_type("S")
-            if self.ext_temp < 50:
+            if self.external_temp < 50:
                 if self.timer_log_interval.isActive():
+                    print("Stopped logging...")
                     self.timer_log_interval.stop()
+                    self.ui.btn_logging_state.setText("Start Logging")
+                print("Setting controller state to Idle.")
                 self.controller.set_system_state("Idle")
         elif runstate not in ['Idle']:
             return
@@ -709,22 +715,49 @@ class ProfileSettingsForm(QWidget):
             else:
                 return None
 
-        return timedelta(hours=hours, minutes=minutes, seconds=seconds).__str__()
+        td = timedelta(hours=hours, minutes=minutes, seconds=seconds)
+        hours, remainder = divmod(td.seconds, 3600)
+        hours = hours + td.days * 24
+        if hours > 99:
+            hours = 99
+        minutes, seconds = divmod(remainder, 60)
+
+        ret = '{:02}:{:02}:{:02}'.format(int(hours), int(minutes), int(seconds))
+        return ret
 
     @staticmethod
     def convert_time_to_msec(time_str: str):
         hours, minutes, seconds = time_str.split(':')
         # Note: No exception checking here. I want this to fail if it gets passed an invalid time string.
         #  This should prevent sending junk data to the controller.
-        hours = int(hours)
+        try:
+            hours = int(hours)
+        except ValueError as err:
+            print(err)
+            if 'days' in hours:
+                days, hours = hours.split(' days, ')
+                # print('Got days: {}, hours: {}'.format(days, hours))
+                hours = int(days) * 24 + int(hours)
+                if hours > 99:
+                    hours = 99
+                # print('Converted to Hours: {}'.format(hours))
         minutes = int(minutes)
         seconds = int(seconds)
 
-        return int(timedelta(hours=hours, minutes=minutes, seconds=seconds).seconds * 1000)
+        td = timedelta(hours=hours, minutes=minutes, seconds=seconds)
+        return int((td.seconds + (td.days * 24 * 3600)) * 1000)
 
     @staticmethod
     def convert_msec_to_time(msec: int):
-        return timedelta(milliseconds=msec).__str__()
+        td = timedelta(milliseconds=msec)
+        hours, remainder = divmod(td.seconds, 3600)
+        hours = hours + td.days * 24
+        if hours > 99:
+            hours = 99
+        minutes, seconds = divmod(remainder, 60)
+
+        ret = '{:02}:{:02}:{:02}'.format(int(hours), int(minutes), int(seconds))
+        return ret
 
 
 if __name__ == "__main__":
