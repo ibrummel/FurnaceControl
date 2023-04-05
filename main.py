@@ -1,4 +1,5 @@
 import os
+from copy import copy, deepcopy
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QComboBox, QPushButton, QDialog, QWidget, QLineEdit, QCheckBox, \
     QGroupBox, QFileDialog, QMessageBox
@@ -87,6 +88,7 @@ class SignalThermocouple(QObject):
 
 
 class FurnaceLogger(QDialog):
+    # Done: Check that outputs are 1 indexed not 0 indexed.
     control_output = 3
     heat_init_temp = 120
 
@@ -242,7 +244,7 @@ class FurnaceLogger(QDialog):
                 self.start_measurement()
             elif no_file_selected == QMessageBox.Cancel:
                 return
-            # Fixme: maybe add more file save path checking i.e. blank or default location.
+            # Done: maybe add more file save path checking i.e. blank or default location.
 
     def set_log_file_path_by_dialog(self):
         file_name = QFileDialog.getSaveFileName(self,
@@ -317,10 +319,11 @@ class FurnaceLogger(QDialog):
             self.ui.gbox_trim_setup.setDisabled(False)
 
     def set_output_trim(self):
+        # DONE 23 March 2022: Add limits to retrans values as appropriate
         # Check the input values, if not valid reset with current values from controller
         readings = [float(self.ui.line_trim_reading1.text()), float(self.ui.line_trim_reading2.text())]
         outputs = [float(self.ui.line_trim_output1.text()), float(self.ui.line_trim_output2.text())]
-        
+
         valid = True
         try:
             for val in readings:
@@ -337,13 +340,14 @@ class FurnaceLogger(QDialog):
                     break
         except TypeError:
             valid = False
-                
-        if valid: # All valid send updated values to controller
+
+        if valid:  # All valid send updated values to controller
             # ToDo: Add a messagebox allowing the user to set both trims equal automatically to avoid the output floating without control.
-            self.controller.set_retransmission_trim(self.control_output, readings[0], outputs[0], readings[1], outputs[1])
+            self.controller.set_retransmission_trim(self.control_output, readings[0], outputs[0], readings[1],
+                                                    outputs[1])
         else:
             print("Received invalid trim values. Resetting to controller values")
-        
+
         self.update_fields()
 
     def set_selected_profile(self, profile_num):
@@ -371,7 +375,8 @@ class FurnaceLogger(QDialog):
             self.ui.line_trim_output1.setText(str(self.preheat_trims[1]))
             self.ui.line_trim_reading2.setText(str(self.preheat_trims[2]))
             self.ui.line_trim_output2.setText(str(self.preheat_trims[3]))
-            self.controller.set_retransmission_trim(output_num=self.control_output, reading1=self.preheat_trims[0], output1=self.preheat_trims[1],
+            self.controller.set_retransmission_trim(output_num=self.control_output, reading1=self.preheat_trims[0],
+                                                    output1=self.preheat_trims[1],
                                                     reading2=self.preheat_trims[2], output2=self.preheat_trims[3])
             # Start the controller for constant load heating
             self.controller.set_system_state("Run")
@@ -466,11 +471,9 @@ class FurnaceLogger(QDialog):
         self.ui.gbox_output.setDisabled(state)
         self.ui.gbox_profile.setDisabled(state)
 
-        # TODO: Add input masking or input checking to all functions to avoid crashes from being a fuckup at typing
-        # DONE 23 March 2022: Add limits to retrans values as appropriate
-        # Done: Check that outputs are 1 indexed not 0 indexed.
-        # TODO: Add functionality to allow saving of arbitrary values to log
-        # TODO: Add tool that allows setting/reading arbitrary values from controller using register list
+        # ToDo: Add input masking or input checking to all functions to avoid crashes from being a fuckup at typing
+        # ToDo: Add functionality to allow saving of arbitrary values to log
+        # ToDo: Add tool that allows setting/reading arbitrary values from controller using register list
         # ToDo: Restructure UI to be just for auto running with popout window for more manual control
         # ToDo: Make the box that selects profiles wait until editing is finished to pull profile
         # ToDo: Add button to mpl toolbar to manage data plotting see here:
@@ -480,8 +483,8 @@ class FurnaceLogger(QDialog):
 
 class ProfileSettingsForm(QWidget):
     profile_num_signal = pyqtSignal(int)
-    current_profile = {
-        'number': 1, 'trackingMode': '', 'numSegments': 0, 'linkAction': '', 'linkProfile': 0, 'edited': False,
+    blank_profile = {
+        'number': 1, 'trackingMode': '', 'numSegments': 0, 'linkAction': '', 'linkProfile': 0,
         1: {'active': True, 'ramp': True, 'soak': True, 'rTime': 36000, 'sTime': 3600, 'setpoint': 500},
         2: {'active': True, 'ramp': True, 'soak': True, 'rTime': 36000, 'sTime': 3600, 'setpoint': 500},
         3: {'active': True, 'ramp': True, 'soak': True, 'rTime': 36000, 'sTime': 3600, 'setpoint': 500},
@@ -518,7 +521,8 @@ class ProfileSettingsForm(QWidget):
         self.init_fields()
         self.init_connections()
 
-        self.read_profile(self.parent.controller.get_current_edit_profile_number())
+        self.current_profile = deepcopy(self.blank_profile)
+        self.load_profile_from_controller(self.parent.controller.get_current_edit_profile_number())
 
     def init_fields(self):
         self.ui.spin_profile_num.setRange(1, 99)
@@ -546,7 +550,8 @@ class ProfileSettingsForm(QWidget):
         self.ui.btn_ok.clicked.connect(self.ok)
         self.ui.btn_apply.clicked.connect(self.apply)
         self.ui.btn_cancel.clicked.connect(self.cancel)
-        self.ui.btn_refresh_profile.clicked.connect(lambda: self.read_profile(self.ui.spin_profile_num.value()))
+        self.ui.btn_reload_profile.clicked.connect(
+            lambda: self.load_profile_from_controller(self.ui.spin_profile_num.value()))
 
     def ok(self):
         self.write_profile()
@@ -556,7 +561,7 @@ class ProfileSettingsForm(QWidget):
         self.write_profile()
 
     def cancel(self):
-        self.read_profile(self.ui.spin_profile_num.value())
+        self.load_profile_from_controller(self.ui.spin_profile_num.value())
         self.close()
 
     def close(self):
@@ -576,10 +581,10 @@ class ProfileSettingsForm(QWidget):
             sequence = 1
             while self.current_profile['linkAction'] == 'Link':
                 sequence += 1
-                self.read_profile(self.current_profile['linkProfile'])
+                self.load_profile_from_controller(self.current_profile['linkProfile'])
                 root.append(self._profile_xml(self.current_profile, sequence=sequence))
 
-            self.read_profile(execute_profile)
+            self.load_profile_from_controller(execute_profile)
 
         return ET.ElementTree(root)
 
@@ -610,23 +615,27 @@ class ProfileSettingsForm(QWidget):
         # FIXME: Write loader for xml files to load profiles (including linked) back into the controller.
         pass
 
-    def read_profile(self, profile: int):
+    def _read_profile(self, profile: int):
         # print('Loading profile number {}'.format(profile))
-        self.current_profile['number'] = profile
+        read_profile = deepcopy(self.blank_profile)
+        read_profile['number'] = profile
         self.parent.controller.set_current_profile_number(profile)
-        self.current_profile.update(self.controller.read_profile_info())
+        read_profile.update(self.controller.read_profile_info())
         for i in range(1, 9):  # Note 1-9 because range does not include last value
             try:
                 self.controller.set_current_segment_number(i)
-                self.current_profile[i] = dict(
-                    active=(True if i <= self.current_profile['numSegments'] else False), )
-                self.current_profile[i].update(self.controller.read_full_segment())
+                read_profile[i] = dict(
+                    active=(True if i <= read_profile['numSegments'] else False), )
+                read_profile[i].update(self.controller.read_full_segment())
             except modbus.NoResponseError as err:
                 print(err)
                 print("Sleeping 0.2s then retrying load of profile {}".format(profile))
                 sleep(0.2)
-                return self.read_profile(profile)
-        self.current_profile['edited'] = False
+                return self._read_profile(profile)
+        return read_profile
+
+    def load_profile_from_controller(self, profile: int):
+        self.current_profile = self._read_profile(profile)
         self.update_fields()
 
     def read_segment_fields(self):
@@ -654,10 +663,35 @@ class ProfileSettingsForm(QWidget):
             self.current_profile[i] = new_segment
 
     def change_profile(self, profile_num: int):
-        # Fixme: check for changes to save before reading new profile
-        # if self.current_profile['edited']:
-        #     QMessageBox
-        self.read_profile(profile_num)
+        # Done 05 April 2023: check for changes to save before reading new profile
+        if self.profile_edited():
+            save_edited_profile = QMessageBox()
+                                                       # "The profile has been edited. Loading a new profile will erase "
+                                                       # "any changes that have been made. Would you like to save the "
+                                                       # "edited profile?",
+                                                       # QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+                                                       # QMessageBox.No)
+            save_edited_profile.setIcon(QMessageBox.Question)
+            save_edited_profile.setText("Profile has been edited")
+            save_edited_profile.setInformativeText("The profile has been edited. Loading a new profile will erase "
+                                                   "any changes that have been made. Would you like to save the "
+                                                   "edited profile before loading profile #{}?".format(profile_num))
+            save_edited_profile.addButton(QMessageBox.Save)
+            save_edited_profile.addButton("Revert Changes", QMessageBox.RejectRole)
+            ret = save_edited_profile.exec()
+            if ret == QMessageBox.Save:
+                self.write_profile()
+            elif ret == QMessageBox.RejectRole:
+                pass
+        sleep(0.2)
+        self.load_profile_from_controller(profile_num)
+
+    def profile_edited(self):
+        controller_profile = self._read_profile(self.current_profile['number'])
+        if self.current_profile == controller_profile:
+            return False
+        else:
+            return True
 
     def update_tracking_mode(self, tracking_mode: str):
         self.controller.set_ramp_soak_tracking_mode(tracking_mode)
@@ -713,8 +747,7 @@ class ProfileSettingsForm(QWidget):
                                                    rTime=self.current_profile[i]['rTime'],
                                                    sTime=self.current_profile[i]['sTime'],
                                                    setpoint=self.current_profile[i]['setpoint'])
-        self.current_profile['edited'] = False
-        self.read_profile(self.current_profile['number'])
+        self.load_profile_from_controller(self.current_profile['number'])
 
     @staticmethod
     def handle_time_input(time_input: str):
