@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\main.ui'
+# Form implementation generated from reading ui file 'src/ui/main.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1323, 761)
+        MainWindow.resize(1323, 770)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(MainWindow)
         self.horizontalLayout_2.setSpacing(3)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
@@ -139,6 +139,7 @@ class Ui_MainWindow(object):
         self.label_6.setObjectName("label_6")
         self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.label_6)
         self.spin_profile_number = QtWidgets.QSpinBox(self.gbox_profile)
+        self.spin_profile_number.setKeyboardTracking(False)
         self.spin_profile_number.setObjectName("spin_profile_number")
         self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.spin_profile_number)
         self.label_7 = QtWidgets.QLabel(self.gbox_profile)

@@ -1,8 +1,8 @@
 import os
 from copy import copy, deepcopy
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QComboBox, QPushButton, QDialog, QWidget, QLineEdit, QCheckBox, \
-    QGroupBox, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QDialog, QWidget, QLineEdit, QCheckBox, \
+    QGroupBox, QFileDialog, QMessageBox, QProxyStyle, QStyle
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer, QRegExp, QObject
 import Omega_Platinum_Enum as ENUM
 from PyDAQmx import (Task, InvalidAttributeValueError, DAQmx_Val_DegC, DAQmx_Val_J_Type_TC,
@@ -25,6 +25,21 @@ from datetime import timedelta, datetime
 # import os
 # os.system("pyuic5 -o src/ui/main_ui.py src/ui/main.ui")
 # os.system("pyuic5 -o src/ui/profile_settings_ui.py src/ui/profile_settings.ui")
+
+# Used to prevent the spinbox from changing more than one number per click
+class NoRepeatSpinStyle(QProxyStyle):
+    # See: https://stackoverflow.com/questions/40746350/why-qspinbox-jumps-twice-the-step-value
+    def styleHint(self, hint, option=None, widget=None, returnData=None):
+        if hint == QStyle.SH_SpinBox_KeyPressAutoRepeatRate:
+            return 10**10
+        elif hint == QStyle.SH_SpinBox_ClickAutoRepeatRate:
+            return 10**10
+        elif hint == QStyle.SH_SpinBox_ClickAutoRepeatThreshold:
+            # You can use only this condition to avoid the auto-repeat,
+            # but better safe than sorry ;-)
+            return 10**10
+        else:
+            return super().styleHint(hint, option, widget, returnData)
 
 class SignalThermocouple(QObject):
     ext_temp_ready = pyqtSignal(float)
@@ -125,6 +140,7 @@ class FurnaceLogger(QDialog):
         self.ui.combo_controller_tc.addItems(['K', 'J', 'T', 'E', 'N', 'L', 'R', 'S', 'B', 'C'])
         self.ui.combo_output_mode.addItems(list(ENUM.Write.output_mode.keys()))
         self.ui.spin_profile_number.setRange(1, 99)
+        self.ui.spin_profile_number.setStyle(NoRepeatSpinStyle())
         self.ui.combo_profile_tracking.addItems(list(ENUM.Write.ramp_soak_tracking.keys()))
         self.update_fields()
 
@@ -475,7 +491,7 @@ class FurnaceLogger(QDialog):
         # ToDo: Add functionality to allow saving of arbitrary values to log
         # ToDo: Add tool that allows setting/reading arbitrary values from controller using register list
         # ToDo: Restructure UI to be just for auto running with popout window for more manual control
-        # ToDo: Make the box that selects profiles wait until editing is finished to pull profile
+        # Done 05 April 2023: Make the box that selects profiles wait until editing is finished to pull profile
         # ToDo: Add button to mpl toolbar to manage data plotting see here:
         #  https://matplotlib.org/3.1.1/gallery/user_interfaces/toolmanager_sgskip.html
         #  https://stackoverflow.com/questions/12695678/how-to-modify-the-navigation-toolbar-easily-in-a-matplotlib-figure-window
@@ -526,10 +542,13 @@ class ProfileSettingsForm(QWidget):
 
     def init_fields(self):
         self.ui.spin_profile_num.setRange(1, 99)
+        self.ui.spin_profile_num.setStyle(NoRepeatSpinStyle())
         self.ui.combo_tracking_mode.addItems(list(ENUM.Write.ramp_soak_tracking.keys()))
         self.ui.spin_num_segments.setRange(1, 8)
+        self.ui.spin_num_segments.setStyle(NoRepeatSpinStyle())
         self.ui.combo_link_action.addItems(list(ENUM.Write.ramp_soak_link_action.keys()))
         self.ui.spin_link_to.setRange(0, 99)
+        self.ui.spin_link_to.setStyle(NoRepeatSpinStyle())
 
     def init_connections(self):
         self.ui.spin_profile_num.valueChanged.connect(self.change_profile)

@@ -38,7 +38,11 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QSpinBox" name="spin_num_segments"/>
+         <widget class="QSpinBox" name="spin_num_segments">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
         <item row="1" column="0">
          <widget class="QLabel" name="lbl_tracking_mode">
@@ -55,7 +59,11 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QSpinBox" name="spin_profile_num"/>
+         <widget class="QSpinBox" name="spin_profile_num">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -79,7 +87,11 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QSpinBox" name="spin_link_to"/>
+         <widget class="QSpinBox" name="spin_link_to">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

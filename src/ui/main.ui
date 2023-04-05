@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1323</width>
-    <height>761</height>
+    <height>770</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -221,7 +221,11 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QSpinBox" name="spin_profile_number"/>
+           <widget class="QSpinBox" name="spin_profile_number">
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+           </widget>
           </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_7">
