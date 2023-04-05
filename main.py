@@ -359,6 +359,7 @@ class FurnaceLogger(QDialog):
             self.disable_controls(True)
             # Set up for constant load heating + change ui elements to reflect changes
             self.ui.btn_start_run.setText("Stop Furnace")
+            self.ui.live_plot.clear_data()
             self.ui.combo_controller_tc.setCurrentText("S")
             self.controller.set_tc_type("S")
             self.ui.combo_output_mode.setCurrentText('Retransmission')
@@ -463,13 +464,11 @@ class FurnaceLogger(QDialog):
         self.ui.gbox_profile.setDisabled(state)
 
         # FixMe: Add input masking or input checking to all functions to avoid crashes from being a fuckup at typing
-        # ToDo: Add limits to retrans values as appropriate
+        # DONE 23 March 2022: Add limits to retrans values as appropriate
         # FIXME: Check that outputs are 1 indexed not 0 indexed.
         # ToDo: Add button to mpl toolbar to manage data plotting see here:
         #  https://matplotlib.org/3.1.1/gallery/user_interfaces/toolmanager_sgskip.html
         #  https://stackoverflow.com/questions/12695678/how-to-modify-the-navigation-toolbar-easily-in-a-matplotlib-figure-window
-
-    # FIXME: Add plotting capability
 
 
 class ProfileSettingsForm(QWidget):
