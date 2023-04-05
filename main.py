@@ -113,6 +113,7 @@ class FurnaceLogger(QDialog):
         self.data_thread = QThread()
 
         self.preheat_trims = [0., 3.00, 100., 3.00]
+        self.trim_limits = [0., 0., 100., 5.]
 
         self.init_fields()
         self.init_connections()
@@ -131,15 +132,15 @@ class FurnaceLogger(QDialog):
         if tc_type == '<Reserved>':
             raise ValueError('Received invalid enumeration of thermocouple type from furnace controller.')
         self.ui.combo_controller_tc.setCurrentText(tc_type)
-        self.ui.line_log_interval.setText(str(self.log_interval_timeout / 1000))
+        self.ui.line_log_interval.setText('{0:.1f}'.format(self.log_interval_timeout / 1000))
         self.ui.line_log_file.setText(self.log_file)
         self.set_logging_gbox()
         self.ui.combo_output_mode.setCurrentText(self.controller.get_output_mode(self.control_output))
         trims = self.controller.get_retransmission_trim(self.control_output)
-        self.ui.line_trim_reading1.setText(str(trims[0]))
-        self.ui.line_trim_output1.setText(str(trims[1]))
-        self.ui.line_trim_reading2.setText(str(trims[2]))
-        self.ui.line_trim_output2.setText(str(trims[3]))
+        self.ui.line_trim_reading1.setText('{0:.2f}'.format(trims[0]))
+        self.ui.line_trim_output1.setText('{0:.2f}'.format(trims[1]))
+        self.ui.line_trim_reading2.setText('{0:.2f}'.format(trims[2]))
+        self.ui.line_trim_output2.setText('{0:.2f}'.format(trims[3]))
         if self.ui.combo_output_mode.currentText() != 'Retransmission':
             self.ui.gbox_trim_setup.setDisabled(True)
         self.ui.spin_profile_number.setValue(self.controller.get_current_edit_profile_number())
@@ -316,10 +317,31 @@ class FurnaceLogger(QDialog):
             self.ui.gbox_trim_setup.setDisabled(False)
 
     def set_output_trim(self):
-        self.controller.set_retransmission_trim(self.control_output, float(self.ui.line_trim_reading1.text()),
-                                                float(self.ui.line_trim_output1.text()),
-                                                float(self.ui.line_trim_reading2.text()),
-                                                float(self.ui.line_trim_output2.text()))
+        # Check the input values, if not valid reset with current values from controller
+        readings = [float(self.ui.line_trim_reading1.text()), float(self.ui.line_trim_reading2.text())]
+        outputs = [float(self.ui.line_trim_output1.text()), float(self.ui.line_trim_output2.text())]
+        
+        valid = True
+        for val in readings:
+            if self.trim_limits[0] <= val <= self.trim_limits[2]:
+                pass
+            else:
+                valid = False
+                break
+        for val in outputs:
+            if self.trim_limits[1] <= val <= self.trim_limits[3]:
+                pass
+            else:
+                valid = False
+                break
+                
+        if valid: # All valid send updated values to controller
+            # ToDo: Add a messagebox allowing the user to set both trims equal automatically to avoid the output floating without control.
+            self.controller.set_retransmission_trim(self.control_output, readings[0], outputs[0], readings[1], outputs[1])
+        else:
+            print("Received invalid trim values. Resetting to controller values")
+        
+        self.update_fields()
 
     def set_selected_profile(self, profile_num):
         self.controller.set_current_profile_number(profile_num)
