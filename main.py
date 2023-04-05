@@ -112,6 +112,8 @@ class FurnaceLogger(QDialog):
         self.log_file = r"C:\Users\Ian\Documents\Furnace Runs\default_temp_log.csv"
         self.data_thread = QThread()
 
+        self.preheat_trims = [0., 3.00, 100., 3.00]
+
         self.init_fields()
         self.init_connections()
 
@@ -339,12 +341,12 @@ class FurnaceLogger(QDialog):
             self.controller.set_tc_type("S")
             self.ui.combo_output_mode.setCurrentText('Retransmission')
             self.controller.set_output_mode(self.control_output, 'Retransmission')
-            self.ui.line_trim_reading1.setText('0')
-            self.ui.line_trim_output1.setText('10')
-            self.ui.line_trim_reading2.setText('100')
-            self.ui.line_trim_output2.setText('1')
-            self.controller.set_retransmission_trim(output_num=self.control_output, reading1=0., output1=10.,
-                                                    reading2=100., output2=1.)
+            self.ui.line_trim_reading1.setText(str(self.preheat_trims[0]))
+            self.ui.line_trim_output1.setText(str(self.preheat_trims[1]))
+            self.ui.line_trim_reading2.setText(str(self.preheat_trims[2]))
+            self.ui.line_trim_output2.setText(str(self.preheat_trims[3]))
+            self.controller.set_retransmission_trim(output_num=self.control_output, reading1=self.preheat_trims[0], output1=self.preheat_trims[1],
+                                                    reading2=self.preheat_trims[2], output2=self.preheat_trims[3])
             # Start the controller for constant load heating
             self.controller.set_system_state("Run")
             # Start checking every 5 seconds if the external TC reads >=120C to switch over TC type and start normal
@@ -379,7 +381,7 @@ class FurnaceLogger(QDialog):
             self.ui.combo_controller_tc.setCurrentText("B")
             self.controller.set_tc_type("B")
             print("Set TC mode to B type")
-
+            sleep(5)
             # Check to make sure that the B type TC reads
             print("Reading system state...")
             state = self.controller.get_system_state()
