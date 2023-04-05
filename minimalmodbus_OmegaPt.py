@@ -1296,6 +1296,8 @@ class Instrument:
         """
         _check_string(request, minlength=1, description="request")
         _check_int(number_of_bytes_to_read)
+        # Added for retry code by Ian Brummel 05 April 2023
+        raw_request = request
 
         self._print_debug(
             "Will write to instrument (expecting {} bytes back): {!r} ({})".format(
@@ -1406,7 +1408,10 @@ class Instrument:
             self._print_debug(text)
 
         if not answer:
-            # print("Communication error. No response. Trying again")
+            # Retry code added by Ian Brummel on 5 April 2023
+            print("Communication error. No response. Trying again...")
+            time.sleep(0.5)
+            return self._communicate(raw_request, number_of_bytes_to_read)
             # return self._communicate(str(request, encoding="latin1"), number_of_bytes_to_read)
             raise NoResponseError("No communication with the instrument (no answer)")
 
