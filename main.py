@@ -322,18 +322,21 @@ class FurnaceLogger(QDialog):
         outputs = [float(self.ui.line_trim_output1.text()), float(self.ui.line_trim_output2.text())]
         
         valid = True
-        for val in readings:
-            if self.trim_limits[0] <= val <= self.trim_limits[2]:
-                pass
-            else:
-                valid = False
-                break
-        for val in outputs:
-            if self.trim_limits[1] <= val <= self.trim_limits[3]:
-                pass
-            else:
-                valid = False
-                break
+        try:
+            for val in readings:
+                if self.trim_limits[0] <= val <= self.trim_limits[2]:
+                    pass
+                else:
+                    valid = False
+                    break
+            for val in outputs:
+                if self.trim_limits[1] <= val <= self.trim_limits[3]:
+                    pass
+                else:
+                    valid = False
+                    break
+        except TypeError:
+            valid = False
                 
         if valid: # All valid send updated values to controller
             # ToDo: Add a messagebox allowing the user to set both trims equal automatically to avoid the output floating without control.
@@ -463,9 +466,13 @@ class FurnaceLogger(QDialog):
         self.ui.gbox_output.setDisabled(state)
         self.ui.gbox_profile.setDisabled(state)
 
-        # FixMe: Add input masking or input checking to all functions to avoid crashes from being a fuckup at typing
+        # TODO: Add input masking or input checking to all functions to avoid crashes from being a fuckup at typing
         # DONE 23 March 2022: Add limits to retrans values as appropriate
-        # FIXME: Check that outputs are 1 indexed not 0 indexed.
+        # Done: Check that outputs are 1 indexed not 0 indexed.
+        # TODO: Add functionality to allow saving of arbitrary values to log
+        # TODO: Add tool that allows setting/reading arbitrary values from controller using register list
+        # ToDo: Restructure UI to be just for auto running with popout window for more manual control
+        # ToDo: Make the box that selects profiles wait until editing is finished to pull profile
         # ToDo: Add button to mpl toolbar to manage data plotting see here:
         #  https://matplotlib.org/3.1.1/gallery/user_interfaces/toolmanager_sgskip.html
         #  https://stackoverflow.com/questions/12695678/how-to-modify-the-navigation-toolbar-easily-in-a-matplotlib-figure-window
