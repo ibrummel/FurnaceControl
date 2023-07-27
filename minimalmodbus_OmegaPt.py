@@ -1406,6 +1406,8 @@ class Instrument:
             self._print_debug(text)
 
         if not answer:
+            # print("Communication error. No response. Trying again")
+            # return self._communicate(str(request, encoding="latin1"), number_of_bytes_to_read)
             raise NoResponseError("No communication with the instrument (no answer)")
 
         return answer
@@ -1899,7 +1901,7 @@ def _calculate_minimum_silent_period(baudrate):
 
     BITTIMES_PER_CHARACTERTIME = 11
     MINIMUM_SILENT_CHARACTERTIMES = 3.5
-    MINIMUM_SILENT_TIME_SECONDS = 0.00175  # See Modbus standard
+    MINIMUM_SILENT_TIME_SECONDS = 0.00175  # See Modbus standard, Default Value = 0.00175
 
     bittime = 1 / float(baudrate)
     return max(

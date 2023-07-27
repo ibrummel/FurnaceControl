@@ -4,16 +4,19 @@ import Omega_Platinum_Enum as ENUM
 import numpy as np
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import pyqtSignal
+import struct
+from datetime import timedelta
 
 
 class OmegaPlatinumControllerModbus(QWidget):
     temp_ready = pyqtSignal(float)
+
     def __init__(self, comport: str, rounding=2):
-        super().__init__()
+        super(OmegaPlatinumControllerModbus, self).__init__()
 
         try:
             self.controller = modbus.Instrument(comport, 1, mode='rtu', close_port_after_each_call=False,
-                                                debug=False)
+                                                debug=False, )
         except Exception as err:
             print(err)
             print("Could not connect to furnace controller, make sure all other control software is closed and you have"
@@ -29,39 +32,39 @@ class OmegaPlatinumControllerModbus(QWidget):
         return temp
 
     def get_system_state(self):
-        return ENUM.read.system_state[self.controller.read_register(576)]
+        return ENUM.Read.system_state[self.controller.read_register(576)]
 
-    def set_system_state(self, state):
-        if state not in ENUM.write.system_state:
+    def set_system_state(self, state: str):
+        if state not in ENUM.Write.system_state:
             raise ValueError("Cannot set to invalid system state: {}".format(state))
-        self.controller.write_register(576, ENUM.write.system_state[state])
+        self.controller.write_register(576, ENUM.Write.system_state[state])
 
     def get_tc_type(self):
-        return ENUM.read.tc_type[self.controller.read_register(643)]
+        return ENUM.Read.tc_type[self.controller.read_register(643)]
 
     def set_tc_type(self, tc_type):
-        if tc_type not in ENUM.write.tc_type:
+        if tc_type not in ENUM.Write.tc_type:
             raise ValueError("Cannot set thermocouple type to un-enumerated type: {}".format(tc_type))
-        self.controller.write_register(643, ENUM.write.tc_type[tc_type])
+        self.controller.write_register(643, ENUM.Write.tc_type[tc_type])
 
     def get_output_mode(self, output_num: int):
         if 1 <= output_num < 8:
             datum = 'mode'
             register = ENUM.get_output_register(output_num, datum)
-            return ENUM.read.output_mode[self.controller.read_register(register)]
+            return ENUM.Read.output_mode[self.controller.read_register(register)]
 
     def set_output_mode(self, output_num: int, mode: str):
         if 1 <= output_num <= 8:
             datum = 'mode'
             register = ENUM.get_output_register(output_num, datum)
-            if mode not in ENUM.write.output_mode:
+            if mode not in ENUM.Write.output_mode:
                 raise ValueError("Invalid output mode supplied {}. "
-                                 "Valid modes are {}".format(mode, ENUM.write.output_mode.keys()))
-            self.controller.write_register(register, ENUM.write.output_mode[mode])
+                                 "Valid modes are {}".format(mode, ENUM.Write.output_mode.keys()))
+            self.controller.write_register(register, ENUM.Write.output_mode[mode])
 
     def set_retransmission_trim(self, output_num: int, reading1=0., output1=0.,
                                 reading2=100., output2=1.):
-        if 1<=output_num<= 8:
+        if 1 <= output_num <= 8:
             data = ['retran_reading1', 'retran_output1', 'retran_reading2', 'retran_output2']
             trims = [reading1, output1, reading2, output2]
             if not (isinstance(reading1, (int, float)) and isinstance(output1, (int, float))
@@ -74,7 +77,7 @@ class OmegaPlatinumControllerModbus(QWidget):
                 self.controller.write_float(register, trims[i])
 
     def get_retransmission_trim(self, output_num: int):
-        if 1<=output_num<= 8:
+        if 1 <= output_num <= 8:
             data = ['retran_reading1', 'retran_output1', 'retran_reading2', 'retran_output2']
             trims = []
 
@@ -84,29 +87,195 @@ class OmegaPlatinumControllerModbus(QWidget):
 
             return trims
 
-    def set_ramp_soak_tracking(self, mode: str):
-        if mode not in ENUM.write.ramp_soak_tracking:
-            raise ValueError("Invalid ramp/soak tracking mode supplied: {}".format(mode))
-        self.controller.write_register(615, ENUM.write.ramp_soak_tracking[mode])
-
-    def get_current_profile_number(self):
+    ###############################################################################################
+    # PROFILE SPECIFIC SETTINGS
+    ###############################################################################################
+    def get_current_edit_profile_number(self):
         return int(self.controller.read_register(610))
+
+    def get_current_run_profile_number(self):
+        return int(self.controller.read_register(609))
 
     def set_current_profile_number(self, profile_num: int):
         if not isinstance(profile_num, (int, float)):
             raise TypeError("Cannot set profile to a value with type {}".format(type(profile_num)))
         elif 1 <= profile_num <= 99:
-            self.controller.write_register(610, int(profile_num))
+            self.controller.write_register(609, int(profile_num))  # Write the profile that will start on clicking run
+            self.controller.write_register(610, int(profile_num))  # Write the profile data to load
         else:
             raise ValueError("Cannot set a profile number outside the range 1-99. "
                              "Profile number supplied: {}".format(profile_num))
 
+    # Note: The following get/set functions rely on the user setting the current profile number
+    #  before accessing them in order to return/set the desired information.
+
+    def get_segments_per_profile(self):
+        return int(self.controller.read_register(612))
+
+    def set_segments_per_profile(self, num_segments: int):
+        self.controller.write_register(612, num_segments)
+
+    def get_link_action(self):
+        return ENUM.Read.ramp_soak_link_action[self.controller.read_register(613)]
+
+    def set_link_action(self, link_action: str):
+        self.controller.write_register(613, ENUM.Write.ramp_soak_link_action[link_action])
+
+    def get_link_profile(self):
+        return int(self.controller.read_register(614))
+
+    def set_link_profile(self, link_profile: int):
+        self.controller.write_register(614, link_profile)
+
     def get_ramp_soak_tracking_mode(self):
-        return ENUM.read.ramp_soak_tracking[self.controller.read_register(615)]
+        return ENUM.Read.ramp_soak_tracking[self.controller.read_register(615)]
 
     def set_ramp_soak_tracking_mode(self, mode: str):
-        if mode not in ENUM.write.ramp_soak_tracking.keys():
+        if mode not in ENUM.Write.ramp_soak_tracking.keys():
             raise ValueError('Invalid ramp/soak profile tracking mode supplied: {}.'.format(mode))
-        self.controller.write_register(615, ENUM.write.ramp_soak_tracking[mode])
+        self.controller.write_register(615, ENUM.Write.ramp_soak_tracking[mode])
 
-    # TODO: Add profile editing and selection
+    ###############################################################################################
+    # SEGMENT SPECIFIC SETTINGS
+    ###############################################################################################
+    def get_current_segment_number(self):
+        return int(self.controller.read_register(611))
+
+    def set_current_segment_number(self, segment_num: int):
+        if not isinstance(segment_num, (int, float)):
+            raise TypeError("Cannot set segment to a value with type {}".format(type(segment_num)))
+        elif 1 <= segment_num <= 8:
+            self.controller.write_register(611, int(segment_num))
+        else:
+            raise ValueError("Cannot set a segment number outside the range 1-8. "
+                             "Segment number supplied: {}".format(segment_num))
+
+    # Note: The following get/set functions rely on the user setting the current segment number
+    #  before accessing them in order to return/set the desired information.
+    def get_ramp_event_flag(self):
+        return bool(self.controller.read_register(616))
+
+    def set_ramp_event_flag(self, ramp_event: bool):
+        self.controller.write_register(616, ramp_event)
+
+    def get_soak_event_flag(self):
+        return bool(self.controller.read_register(617))
+
+    def set_soak_event_flag(self, soak_event: bool):
+        self.controller.write_register(617, soak_event)
+
+    def get_segment_setpoint(self):
+        data = self.controller.read_registers(618, 2)
+        return self.unpack_float(data)
+
+    def set_segment_setpoint(self, setpoint: float):
+        data = self.pack_float(setpoint)
+        self.controller.write_registers(618, data)
+
+    def get_ramp_time_msec(self):
+        data = self.controller.read_registers(620, 2)
+        return self.unpack_int(data)
+
+    def get_ramp_time_formatted(self):
+        return timedelta(milliseconds=self.get_ramp_time_msec()).__str__()
+
+    def set_ramp_time_msec(self, ramp_time_msec: float):
+        data = self.pack_float(ramp_time_msec)
+        self.controller.write_registers(620, data)
+
+    def get_soak_time_msec(self):
+        data = self.controller.read_registers(622, 2)
+        return self.unpack_int(data)
+
+    def get_soak_time_formatted(self):
+        return timedelta(milliseconds=self.get_soak_time_msec()).__str__()
+
+    def set_soak_time_msec(self, dwell_time_msec: float):
+        data = self.pack_float(dwell_time_msec)
+        self.controller.write_registers(620, data)
+
+    ###############################################################################################
+    # MULTI REGISTER VALUE HELPER FUNCTIONS
+    ###############################################################################################
+    # def read_two_register_value(self, start_register: int, value_type: str):
+    #     data = self.controller.read_registers(start_register, 2)
+    #     packed = struct.pack('>HH', data[0], data[1])
+    #
+    #     if value_type == 'float':
+    #         return struct.unpack('>f', packed)[0]
+    #     elif value_type == 'int':
+    #         return struct.unpack('>L', packed)[0]
+    #     else:
+    #         raise TypeError("Invalid return type requested: {}".format(value_type))
+    #
+    # def write_two_register_value(self, start_register: int, value_type: type, value):
+    #     if value_type == 'float':
+    #         packed = struct.pack('>f', value)
+    #     elif value_type == 'int':
+    #         packed = struct.pack('>L', value)
+    #     else:
+    #         raise TypeError("Invalid conversion type requested: {}".format(value_type))
+    #
+    #     values = list(struct.unpack('>HH', packed))
+    #     self.controller.write_registers(start_register, values)
+
+    @staticmethod
+    def unpack_float(data: tuple):
+        packed = struct.pack('>HH', data[0], data[1])
+        return struct.unpack('>f', packed)[0]
+
+    @staticmethod
+    def unpack_int(data: tuple):
+        packed = struct.pack('>HH', data[0], data[1])
+        return struct.unpack('>L', packed)[0]
+
+    @staticmethod
+    def pack_float(value: float):
+        packed = struct.pack('>f', value)
+        return list(struct.unpack('>HH', packed))
+
+    @staticmethod
+    def pack_int(value: int):
+        packed = struct.pack('>L', value)
+        return list(struct.unpack('>HH', packed))
+
+    def read_full_segment(self):
+        data = self.controller.read_registers(616, 8)
+        ramp = bool(data[0])  # Register 616
+        soak = bool(data[1])  # Register 617
+        setpoint = self.unpack_float((data[2], data[3]))  # Registers 618, 619
+        rTime = self.unpack_int((data[4], data[5]))  # Registers 620, 621
+        sTime = self.unpack_int((data[6], data[7]))  # Registers 622, 623
+
+        return dict(ramp=ramp,
+                    soak=soak,
+                    rTime=rTime,
+                    sTime=sTime,
+                    setpoint=setpoint)
+
+    def write_full_segment(self, ramp: bool, soak: bool, rTime: int, sTime: int, setpoint: float):
+        data = [ramp]  # Writes to Register 616
+        data.append(soak)  # Writes to Register 617
+        data.extend(self.pack_float(setpoint))  # Writes to Registers 618, 619
+        data.extend(self.pack_int(rTime))  # Writes to Registers 620, 621
+        data.extend(self.pack_int(sTime))  # Writes to Registers 622, 623
+
+        self.controller.write_registers(616, data)
+
+    def read_profile_info(self):
+        data = self.controller.read_registers(612, 4)
+
+        return dict(numSegments=int(data[0]),  # Register 612
+                    linkAction=ENUM.Read.ramp_soak_link_action[data[1]],  # Register 613
+                    linkProfile=int(data[2]),  # Register 614
+                    trackingMode=ENUM.Read.ramp_soak_tracking[data[3]],  # Register 615
+                    )
+
+    def write_profile_info(self, numSegments: int, linkAction: str, linkProfile: int, trackingMode: str):
+        data = [numSegments,  # Writes register 612
+                ENUM.Write.ramp_soak_link_action[linkAction],  # Writes register 613
+                linkProfile,  # Writes register 614
+                ENUM.Write.ramp_soak_tracking[trackingMode],  # Writes register 615
+                ]
+
+        self.controller.write_registers(612, data)

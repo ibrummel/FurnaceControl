@@ -1,4 +1,4 @@
-class read():
+class Read:
     control = {0: 'Stop',
                1: 'Start',
                2: 'Cancel',
@@ -13,6 +13,10 @@ class read():
                     10: 'Fault', 11: 'Shutdown', 12: 'Autotune'}
 
     ramp_soak_tracking = {0: 'Ramp', 1: 'Soak', 2: 'Cycle'}
+
+    ramp_soak_control = {0: "Disabled", 1: "Front Panel", 2: "Front Panel/D.Input"}
+
+    ramp_soak_link_action = {0: "Stop", 1: "Hold", 2: "Link"}
 
     sensor_type = {0: 'Thermocouple',
                    1: 'RTD',
@@ -41,39 +45,44 @@ class read():
                             3: '4-20 mA', 4: '0-24 mA', }
 
 
-class write():
-    control = {v: k for k, v in read.control.items()}
+class Write:
+    control = {v: k for k, v in Read.control.items()}
 
-    control_action = {v: k for k, v in read.control_action.items()}
+    control_action = {v: k for k, v in Read.control_action.items()}
 
-    system_state = {v: k for k, v in read.system_state.items()}
+    system_state = {v: k for k, v in Read.system_state.items()}
 
-    ramp_soak_tracking = {v: k for k, v in read.ramp_soak_tracking.items()}
+    ramp_soak_tracking = {v: k for k, v in Read.ramp_soak_tracking.items()}
 
-    sensor_type = {v: k for k, v in read.sensor_type.items()}
+    ramp_soak_control = {v: k for k, v in Read.ramp_soak_control.items()}
 
-    tc_type = {v: k for k, v in read.tc_type.items()}
+    ramp_soak_link_action = {v: k for k, v in Read.ramp_soak_link_action.items()}
 
-    output_hw_type = {v: k for k, v in read.output_hw_type.items()}
+    sensor_type = {v: k for k, v in Read.sensor_type.items()}
 
-    output_polarity = {v: k for k, v in read.output_polarity.items()}
+    tc_type = {v: k for k, v in Read.tc_type.items()}
 
-    output_type = {v: k for k, v in read.output_type.items()}
+    output_hw_type = {v: k for k, v in Read.output_hw_type.items()}
 
-    output_mode = {v: k for k, v in read.output_mode.items()}
+    output_polarity = {v: k for k, v in Read.output_polarity.items()}
 
-    output_process_range = {v: k for k, v in read.output_process_range.items()}
+    output_type = {v: k for k, v in Read.output_type.items()}
+
+    output_mode = {v: k for k, v in Read.output_mode.items()}
+
+    output_process_range = {v: k for k, v in Read.output_process_range.items()}
 
 
-class readonly():
-    readonly_ramp_soak_sate = {0x00: 'Inactive', 0x01: 'Ramping', 0x02: 'Soaking', 0x04: 'Ramp Active',
-                               0x08: 'Soak Active', 0x05: 'Ramping, Ramp Active', 0x0a: 'Soaking, Soak Active',
-                               0x10: 'Ramp Soak Paused', 0x80: 'Ramp Soak Error'}
+class ReadOnly():
+    readonly_ramp_soak_state = {0x00: 'Inactive', 0x01: 'Ramping', 0x02: 'Soaking', 0x04: 'Ramp Active',
+                                0x08: 'Soak Active', 0x05: 'Ramping, Ramp Active', 0x0a: 'Soaking, Soak Active',
+                                0x10: 'Ramp Soak Paused', 0x80: 'Ramp Soak Error'}
+
 
 def get_output_register(output: int, datum: str):
     output_registers_start = {1: 1024, 2: 1056, 3: 1088, 4: 1120,
                               5: 1152, 6: 1184, 7: 1216, 8: 1248}
-    output_registers_offset = {"hw_type":  0,
+    output_registers_offset = {"hw_type": 0,
                                'mode': 1,
                                'on_off_action': 2,
                                'setpoint': 3,
@@ -89,9 +98,3 @@ def get_output_register(output: int, datum: str):
         raise ValueError("Datum label supplied ({}) is not available for controller ouputs. "
                          "Valid data labels {}".format(datum, output_registers_offset.keys()))
     return output_registers_start[output] + output_registers_offset[datum]
-
-
-
-
-
-
