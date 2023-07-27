@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\profile_settings.ui'
+# Form implementation generated from reading ui file 'src/ui/profile_settings.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -30,6 +30,7 @@ class Ui_ProfileSettingsDialog(object):
         self.lbl_num_segments.setObjectName("lbl_num_segments")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.lbl_num_segments)
         self.spin_num_segments = QtWidgets.QSpinBox(self.gbox_profile_settings)
+        self.spin_num_segments.setKeyboardTracking(False)
         self.spin_num_segments.setObjectName("spin_num_segments")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.spin_num_segments)
         self.lbl_tracking_mode = QtWidgets.QLabel(self.gbox_profile_settings)
@@ -39,6 +40,7 @@ class Ui_ProfileSettingsDialog(object):
         self.lbl_profile_num.setObjectName("lbl_profile_num")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.lbl_profile_num)
         self.spin_profile_num = QtWidgets.QSpinBox(self.gbox_profile_settings)
+        self.spin_profile_num.setKeyboardTracking(False)
         self.spin_profile_num.setObjectName("spin_profile_num")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.spin_profile_num)
         self.horizontalLayout.addLayout(self.formLayout)
@@ -54,6 +56,7 @@ class Ui_ProfileSettingsDialog(object):
         self.lbl_link_to.setObjectName("lbl_link_to")
         self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.lbl_link_to)
         self.spin_link_to = QtWidgets.QSpinBox(self.gbox_profile_settings)
+        self.spin_link_to.setKeyboardTracking(False)
         self.spin_link_to.setObjectName("spin_link_to")
         self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.spin_link_to)
         self.horizontalLayout.addLayout(self.formLayout_2)
@@ -62,7 +65,7 @@ class Ui_ProfileSettingsDialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 734, 569))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 842, 872))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
@@ -430,9 +433,9 @@ class Ui_ProfileSettingsDialog(object):
         self.verticalLayout.addWidget(self.scrollArea)
         self.horizontalLayout_11 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_11.setObjectName("horizontalLayout_11")
-        self.btn_refresh_profile = QtWidgets.QPushButton(ProfileSettingsDialog)
-        self.btn_refresh_profile.setObjectName("btn_refresh_profile")
-        self.horizontalLayout_11.addWidget(self.btn_refresh_profile)
+        self.btn_reload_profile = QtWidgets.QPushButton(ProfileSettingsDialog)
+        self.btn_reload_profile.setObjectName("btn_reload_profile")
+        self.horizontalLayout_11.addWidget(self.btn_reload_profile)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_11.addItem(spacerItem)
         self.btn_ok = QtWidgets.QPushButton(ProfileSettingsDialog)
@@ -494,8 +497,8 @@ class Ui_ProfileSettingsDialog(object):
         ProfileSettingsDialog.setTabOrder(self.check_ramp_8, self.line_ramp_8)
         ProfileSettingsDialog.setTabOrder(self.line_ramp_8, self.check_dwell_8)
         ProfileSettingsDialog.setTabOrder(self.check_dwell_8, self.line_dwell_8)
-        ProfileSettingsDialog.setTabOrder(self.line_dwell_8, self.btn_refresh_profile)
-        ProfileSettingsDialog.setTabOrder(self.btn_refresh_profile, self.btn_ok)
+        ProfileSettingsDialog.setTabOrder(self.line_dwell_8, self.btn_reload_profile)
+        ProfileSettingsDialog.setTabOrder(self.btn_reload_profile, self.btn_ok)
         ProfileSettingsDialog.setTabOrder(self.btn_ok, self.btn_apply)
         ProfileSettingsDialog.setTabOrder(self.btn_apply, self.btn_cancel)
 
@@ -540,7 +543,7 @@ class Ui_ProfileSettingsDialog(object):
         self.lbl_stpt_8.setText(_translate("ProfileSettingsDialog", "Setpoint:"))
         self.check_ramp_8.setText(_translate("ProfileSettingsDialog", "Ramp Time:"))
         self.check_dwell_8.setText(_translate("ProfileSettingsDialog", "Dwell Time:"))
-        self.btn_refresh_profile.setText(_translate("ProfileSettingsDialog", "Reload Profile"))
+        self.btn_reload_profile.setText(_translate("ProfileSettingsDialog", "Reload Profile"))
         self.btn_ok.setText(_translate("ProfileSettingsDialog", "Ok"))
         self.btn_apply.setText(_translate("ProfileSettingsDialog", "Apply"))
         self.btn_cancel.setText(_translate("ProfileSettingsDialog", "Cancel"))

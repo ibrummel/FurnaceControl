@@ -38,7 +38,11 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QSpinBox" name="spin_num_segments"/>
+         <widget class="QSpinBox" name="spin_num_segments">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
         <item row="1" column="0">
          <widget class="QLabel" name="lbl_tracking_mode">
@@ -55,7 +59,11 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QSpinBox" name="spin_profile_num"/>
+         <widget class="QSpinBox" name="spin_profile_num">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -79,7 +87,11 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QSpinBox" name="spin_link_to"/>
+         <widget class="QSpinBox" name="spin_link_to">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -96,8 +108,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>734</width>
-        <height>569</height>
+        <width>842</width>
+        <height>872</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -676,7 +688,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_11">
      <item>
-      <widget class="QPushButton" name="btn_refresh_profile">
+      <widget class="QPushButton" name="btn_reload_profile">
        <property name="text">
         <string>Reload Profile</string>
        </property>
@@ -766,7 +778,7 @@
   <tabstop>line_ramp_8</tabstop>
   <tabstop>check_dwell_8</tabstop>
   <tabstop>line_dwell_8</tabstop>
-  <tabstop>btn_refresh_profile</tabstop>
+  <tabstop>btn_reload_profile</tabstop>
   <tabstop>btn_ok</tabstop>
   <tabstop>btn_apply</tabstop>
   <tabstop>btn_cancel</tabstop>
