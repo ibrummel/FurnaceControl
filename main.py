@@ -12,7 +12,7 @@ from Signal_Thermocouple import SignalThermocouple
 class FurnaceLogger(QDialog):
     # Done: Check that outputs are 1 indexed not 0 indexed.
     control_output = 3
-    heat_init_temp = 120
+    heat_init_temp = 140
 
     def __init__(self, comport: str, tcdevpath="Dev1/ai0"):
         super(FurnaceLogger, self).__init__()

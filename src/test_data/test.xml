@@ -1,0 +1,22 @@
+<PlatinumProfileGroup>
+    <PlatinumProfile number="1" trackingMode="" numSegments="0" linkAction="" linkProfile="0" sequence="1">
+        <ProfileSegment segmentNum="1" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="2" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="3" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="4" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="5" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="6" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="7" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="8" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+    </PlatinumProfile>
+    <PlatinumProfile number="1" trackingMode="" numSegments="0" linkAction="" linkProfile="0" sequence="1">
+        <ProfileSegment segmentNum="1" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="2" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="3" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="4" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="5" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="6" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="7" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+        <ProfileSegment segmentNum="8" active="True" ramp="True" soak="True" rTime="36000" sTime="3600" setpoint="500"/>
+    </PlatinumProfile>
+</PlatinumProfileGroup>
